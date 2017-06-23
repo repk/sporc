@@ -4,12 +4,16 @@ LDFLAGS =
 LDSCRIPT = script.ld
 MAKE = make
 
-SRC= \
+INC = include
+SRC = \
 	main.c \
-	memory/memory.c
-BIN=sporc
-BUILDDIR=build
-OBJS=$(SRC:%.c=$(BUILDDIR)/%.o)
+	memory/memory.c \
+	memory/file.c
+
+BIN = sporc
+BUILDDIR = build
+OBJS = $(SRC:%.c=$(BUILDDIR)/%.o)
+CFLAGS += $(INC:%=-I %)
 
 all: $(BIN)
 
