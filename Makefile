@@ -8,7 +8,8 @@ INC = include
 SRC = \
 	main.c \
 	memory/memory.c \
-	memory/file.c
+	memory/file.c \
+	cpu/cpu.c
 
 BIN = sporc
 BUILDDIR = build
