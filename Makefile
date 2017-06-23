@@ -4,7 +4,8 @@ LDFLAGS=
 LDSCRIPT=script.ld
 
 SRC= \
-	main.c
+	main.c \
+	memory/memory.c
 BIN=sporc
 BUILDDIR=build
 OBJS=$(SRC:%.c=$(BUILDDIR)/%.o)
@@ -16,7 +17,7 @@ $(BIN): $(OBJS) $(SCRIPT)
 
 $(BUILDDIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) -MMD -c $(CFLAGS) -o $@ $<
+	$(CC) -MMD -c $(CFLAGS) -I include -o $@ $<
 
 -include $(OBJS:.o=.d)
 

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include "memory/memory.h"
+#include "memory.h"
 
 int main(int argc, char **argv)
 {
