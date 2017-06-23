@@ -1,7 +1,8 @@
-CC=gcc
-CFLAGS= -g -O0 -W -Wall
-LDFLAGS=
-LDSCRIPT=script.ld
+CC = gcc
+CFLAGS = -g -O0 -W -Wall
+LDFLAGS =
+LDSCRIPT = script.ld
+MAKE = make
 
 SRC= \
 	main.c \
@@ -10,9 +11,9 @@ BIN=sporc
 BUILDDIR=build
 OBJS=$(SRC:%.c=$(BUILDDIR)/%.o)
 
-all: sporc
+all: $(BIN)
 
-$(BIN): $(OBJS) $(SCRIPT)
+$(BIN): $(OBJS) $(LDSCRIPT)
 	$(CC) -T $(LDSCRIPT) -o $@ $(OBJS) $(LDFLAGS)
 
 $(BUILDDIR)/%.o: %.c
@@ -21,7 +22,13 @@ $(BUILDDIR)/%.o: %.c
 
 -include $(OBJS:.o=.d)
 
-.PHONY: clean
+.PHONY: clean example-clean example
+
+example:
+	$(MAKE) -C example
+
+example-clean:
+	$(MAKE) -C example clean
 
 clean:
 	rm -f $(OBJS)
