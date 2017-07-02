@@ -54,6 +54,7 @@ struct _op2_isn_type {
 static int isn_decode_op2(struct sparc_isn *isn)
 {
 	static struct _op2_isn_type const _isn_op2[] = {
+		_OP2_ISN_SETHI(4, SI_SETHI),
 	};
 	uint8_t flag;
 	int ret;

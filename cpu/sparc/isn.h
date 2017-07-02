@@ -20,6 +20,7 @@ enum sisn_fmt {
 
 enum sid_isn {
 	SI_INVAL = 0,
+	SI_SETHI,
 };
 
 struct sparc_isn {
