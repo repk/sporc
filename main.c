@@ -1,15 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "cpu.h"
 #include "memory.h"
 
 #define PROGFILE "./example/example.bin"
+#define KB 1024
+#define MEMSZ (250 * KB)
 
 int main(int argc, char **argv)
 {
+	struct cpu *cpu;
 	struct memory *mem;
 	int ret;
-	uint32_t rd;
 
 	(void)argc;
 	(void)argv;
@@ -20,21 +23,47 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	ret = memory_map(mem, 0, 0, -1, MP_R | MP_W | MP_X);
+	ret = memory_map(mem, 0, 0, MEMSZ, MP_R | MP_W | MP_X);
 	if(ret < 0) {
 		fprintf(stderr, "Cannot map memory segment\n");
 		return -1;
 	}
 
-	ret = memory_read32(mem, 0, &rd);
-	if(ret < 0) {
-		fprintf(stderr, "Cannot read memory segment\n");
+	cpu = cpu_create("sparc", mem, NULL);
+	if(cpu == NULL) {
+		fprintf(stderr, "Cannot create cpu\n");
 		return -1;
 	}
 
-	printf("Memory mapped with first val 0x%08x\n", be32toh(rd));
+	ret = cpu_boot(cpu, 0x0);
+	if(ret < 0) {
+		fprintf(stderr, "Cannot boot cpu\n");
+		return -1;
+	}
 
-	memory_unmap(mem, 0, -1);
+	while(1) {
+		ret = cpu_fetch(cpu);
+		if(ret < 0) {
+			fprintf(stderr, "Cannot fetch instruction\n");
+			goto exit;
+		}
+
+		ret = cpu_decode(cpu);
+		if(ret < 0) {
+			fprintf(stderr, "Cannot decode instruction\n");
+			goto exit;
+		}
+
+		ret = cpu_exec(cpu);
+		if(ret < 0) {
+			fprintf(stderr, "Cannot execute instruction\n");
+			goto exit;
+		}
+	}
+
+exit:
+	cpu_destroy(cpu);
+	memory_unmap(mem, 0, MEMSZ);
 	memory_destroy(mem);
 
 	return 0;

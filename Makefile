@@ -9,7 +9,10 @@ SRC = \
 	main.c \
 	memory/memory.c \
 	memory/file.c \
-	cpu/cpu.c
+	cpu/cpu.c \
+	cpu/sparc/sparc.c \
+	cpu/sparc/decoder.c \
+	cpu/sparc/iu.c
 
 BIN = sporc
 BUILDDIR = build
