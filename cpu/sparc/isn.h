@@ -22,6 +22,17 @@ enum sid_isn {
 	SI_INVAL = 0,
 	SI_SETHI,
 	SI_OR,
+	SI_LDSB,
+	SI_LDSH,
+	SI_LDUB,
+	SI_LDUH,
+	SI_LD,
+	SI_LDD,
+	SI_STB,
+	SI_STH,
+	SI_ST,
+	SI_STD,
+	SI_CALL,
 };
 
 struct sparc_isn {
