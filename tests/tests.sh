@@ -15,3 +15,4 @@ test ldsb
 test ldub
 test ldsh
 test lduh
+test ld
