@@ -10,3 +10,4 @@ test or
 test stb
 test sth
 test st
+test std
