@@ -14,3 +14,4 @@ test std
 test ldsb
 test ldub
 test ldsh
+test lduh
