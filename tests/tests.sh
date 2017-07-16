@@ -7,3 +7,4 @@ test() {
 
 test sethi
 test or
+test stb
