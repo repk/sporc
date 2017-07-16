@@ -16,3 +16,4 @@ test ldub
 test ldsh
 test lduh
 test ld
+test ldd
