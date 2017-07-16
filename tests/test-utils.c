@@ -12,6 +12,27 @@ uint32_t test_cpu_get_reg(struct cpu *cpu, off_t ridx)
 	return *scpu_get_reg(cpu, ridx);
 }
 
+uint32_t test_cpu_get_mem32(struct cpu *cpu, uintptr_t addr)
+{
+	uint32_t ret = 0;
+	memory_read32(cpu->mem, addr, &ret);
+	return ret;
+}
+
+uint16_t test_cpu_get_mem16(struct cpu *cpu, uintptr_t addr)
+{
+	uint16_t ret = 0;
+	memory_read16(cpu->mem, addr, &ret);
+	return ret;
+}
+
+uint8_t test_cpu_get_mem8(struct cpu *cpu, uintptr_t addr)
+{
+	uint8_t ret = 0;
+	memory_read8(cpu->mem, addr, &ret);
+	return ret;
+}
+
 int test_cpu_step(struct cpu *cpu)
 {
 	int ret;
