@@ -7,6 +7,26 @@
 
 #include "../cpu/sparc/sparc.h"
 
+uint8_t test_cpu_get_cc_n(struct cpu *cpu)
+{
+	return scpu_get_cc_n(cpu);
+}
+
+uint8_t test_cpu_get_cc_z(struct cpu *cpu)
+{
+	return scpu_get_cc_z(cpu);
+}
+
+uint8_t test_cpu_get_cc_v(struct cpu *cpu)
+{
+	return scpu_get_cc_v(cpu);
+}
+
+uint8_t test_cpu_get_cc_c(struct cpu *cpu)
+{
+	return scpu_get_cc_c(cpu);
+}
+
 uint32_t test_cpu_get_reg(struct cpu *cpu, off_t ridx)
 {
 	return *scpu_get_reg(cpu, ridx);
