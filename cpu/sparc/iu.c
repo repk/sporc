@@ -70,14 +70,20 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 }
 
 #define ISN_ALU_CC_NOP(c, x, y, z)
+#define ISN_ALU_CC_NZ(c, x, y, z) do {					\
+	scpu_set_cc_n(c, (z >> 31) & 0x1);				\
+	scpu_set_cc_z(c, ((z == 0) ? 1 : 0));				\
+} while(0)
 
 /* ----------------- Logical instruction ------------------- */
 
 #define DEFINE_ISN_EXEC_LOGICAL(op)					\
-	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)
+	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)			\
+	ISN_EXEC_ALU(op ## _cc, ISN_OP_ ## op, ISN_ALU_CC_NZ)
 
 #define ISN_EXEC_ENTRY_LOGICAL(op)					\
-	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op),			\
+	ISN_EXEC_ENTRY(SI_ ## op ## CC, isn_exec_ ## op ## _cc)
 
 #define ISN_OP_OR(a, b) ((a) | (b))
 #define ISN_OP_ORN(a, b) (~((a) | (b)))
