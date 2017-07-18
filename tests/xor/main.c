@@ -4,7 +4,7 @@
 #include <test-utils.h>
 #include <cpu.h>
 
-#define PROGFILE "./binaries/and.bin"
+#define PROGFILE "./binaries/xor.bin"
 #define KB 1024
 #define MEMSZ (250 * KB)
 
@@ -28,13 +28,13 @@ int main(int argc, char **argv)
 	if(ret != 0)
 		goto close;
 
-	/* AND */
+	/* XOR */
 	ret = test_cpu_step(c);
 	if(ret != 0)
 		goto close;
 
 	reg = test_cpu_get_reg(c, 1);
-	if(reg != 0x00000eef) {
+	if(reg != 0xdeadbeef) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
 		goto close;
 	}
@@ -59,13 +59,13 @@ int main(int argc, char **argv)
 	if(ret != 0)
 		goto close;
 
-	/* AND */
+	/* xor */
 	ret = test_cpu_step(c);
 	if(ret != 0)
 		goto close;
 
 	reg = test_cpu_get_reg(c, 1);
-	if(reg != 0xdeadb000) {
+	if(reg != 0xdeadbeef) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
 		goto close;
 	}

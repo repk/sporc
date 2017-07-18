@@ -18,3 +18,4 @@ test lduh
 test ld
 test ldd
 test and
+test xor
