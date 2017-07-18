@@ -24,6 +24,7 @@ enum sid_isn {
 	SI_AND,
 	SI_ANDN,
 	SI_OR,
+	SI_ORN,
 	SI_XOR,
 	SI_LDSB,
 	SI_LDSH,

@@ -20,3 +20,4 @@ test ldd
 test and
 test xor
 test andn
+test orn
