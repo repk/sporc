@@ -21,3 +21,4 @@ test and
 test xor
 test andn
 test orn
+test xnor

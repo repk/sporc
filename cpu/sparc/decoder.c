@@ -141,6 +141,7 @@ static int isn_decode_op3_2(struct sparc_isn *isn)
 		_OP3_ISN_INT(2, SI_OR),
 		_OP3_ISN_INT(6, SI_ORN),
 		_OP3_ISN_INT(3, SI_XOR),
+		_OP3_ISN_INT(7, SI_XNOR),
 	};
 
 	return isn_decode_op3(isn, _isn_op3_2, ARRAY_SIZE(_isn_op3_2));
