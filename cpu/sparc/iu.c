@@ -6,6 +6,8 @@
 #include "sparc.h"
 #include "isn.h"
 
+/* ----------------- sethi instruction Helpers ------------------- */
+
 static int isn_exec_sethi(struct cpu *cpu, struct sparc_isn const *isn)
 {
 	struct sparc_ifmt_op2_sethi *i;
@@ -21,98 +23,77 @@ static int isn_exec_sethi(struct cpu *cpu, struct sparc_isn const *isn)
 	return 0;
 }
 
-#define ISN_EXEC_ALU_IMM(c, i, o) do {					\
+/* ----------------- ALU instruction Helpers ------------------- */
+
+#define ISN_EXEC_ALU_IMM(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
-	sreg *__rd, *__rs1;						\
+	sreg *__rd, *__rs1, __tmp;					\
 									\
 	__rd = scpu_get_reg(c, __isn->rd);				\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
-	*__rd = o(*__rs1, __isn->imm);					\
+	__tmp = o(*__rs1, __isn->imm);					\
+	cc(c, *__rs1, __isn->imm, __tmp);				\
+	*__rd = __tmp;							\
 } while(0)
 
-#define ISN_EXEC_ALU_REG(c, i, o) do {					\
+#define ISN_EXEC_ALU_REG(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
-	sreg *__rd, *__rs1, *__rs2;					\
+	sreg *__rd, *__rs1, *__rs2, __tmp;				\
 									\
 	__rd = scpu_get_reg(c, __isn->rd);				\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
 	__rs2 = scpu_get_reg(c, __isn->rs2);				\
-	*__rd = o(*__rs1, *__rs2);					\
+	__tmp = o(*__rs1, *__rs2);					\
+	cc(c, *__rs1, *__rs2, __tmp);					\
+	*__rd = __tmp;							\
 } while(0)
 
-#define ISN_EXEC_ALU(c, i, op, ret) do {				\
-	switch((i)->fmt) {						\
+#define ISN_EXEC_ALU(n, op, cc)						\
+static int								\
+isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
+{									\
+	int ret = 0;							\
+									\
+	switch(isn->fmt) {						\
 	case SIF_OP3_IMM:						\
-		ISN_EXEC_ALU_IMM(c, i, op);				\
+		ISN_EXEC_ALU_IMM(cpu, isn, op, cc);			\
 		break;							\
 	case SIF_OP3_REG:						\
-		ISN_EXEC_ALU_REG(c, i, op);				\
+		ISN_EXEC_ALU_REG(cpu, isn, op, cc);			\
 		break;							\
 	default:							\
 		ret = -1;						\
 		break;							\
 	}								\
-} while(0)
+									\
+	return ret;							\
+}
+
+#define ISN_ALU_CC_NOP(c, x, y, z)
+
+/* ----------------- Logical instruction ------------------- */
+
+#define DEFINE_ISN_EXEC_LOGICAL(op)					\
+	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)
+
+#define ISN_EXEC_ENTRY_LOGICAL(op)					\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
 
 #define ISN_OP_OR(a, b) ((a) | (b))
-static int isn_exec_or(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_OR, ret);
-
-	return ret;
-}
-
 #define ISN_OP_ORN(a, b) (~((a) | (b)))
-static int isn_exec_orn(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_ORN, ret);
-
-	return ret;
-}
-
 #define ISN_OP_AND(a, b) ((a) & (b))
-static int isn_exec_and(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_AND, ret);
-
-	return ret;
-}
-
 #define ISN_OP_ANDN(a, b) (~((a) & (b)))
-static int isn_exec_andn(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_ANDN, ret);
-
-	return ret;
-}
-
 #define ISN_OP_XOR(a, b) ((a) ^ (b))
-static int isn_exec_xor(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_XOR, ret);
-
-	return ret;
-}
-
 #define ISN_OP_XNOR(a, b) (~((a) ^ (b)))
-static int isn_exec_xnor(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
 
-	ISN_EXEC_ALU(cpu, isn, ISN_OP_XNOR, ret);
+DEFINE_ISN_EXEC_LOGICAL(OR)
+DEFINE_ISN_EXEC_LOGICAL(ORN)
+DEFINE_ISN_EXEC_LOGICAL(AND)
+DEFINE_ISN_EXEC_LOGICAL(ANDN)
+DEFINE_ISN_EXEC_LOGICAL(XOR)
+DEFINE_ISN_EXEC_LOGICAL(XNOR)
 
-	return ret;
-}
+/* ----------------- Memory instruction ------------------- */
 
 #define be8toh(a) (a) /* Kludge */
 #define htobe8(a) (a) /* Kludge */
@@ -149,30 +130,35 @@ static int isn_exec_xnor(struct cpu *cpu, struct sparc_isn const *isn)
 	}								\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM(c, i, op, sz, ret) do {			\
-	switch((i)->fmt) {						\
+#define DEFINE_ISN_EXEC_MEM(n, op, sz)					\
+static int								\
+isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
+{									\
+	int ret = 0;							\
+									\
+	switch(isn->fmt) {						\
 	case SIF_OP3_IMM:						\
 	{								\
 		struct sparc_ifmt_op3_imm const *__isn =		\
-				to_ifmt(op3_imm, i);			\
+				to_ifmt(op3_imm, isn);			\
 		sreg *__rd, *__rs1;					\
 									\
-		__rd = scpu_get_reg(c, __isn->rd);			\
-		__rs1 = scpu_get_reg(c, __isn->rs1);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, (c)->mem, __rs1,		\
+		__rd = scpu_get_reg(cpu, __isn->rd);			\
+		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu->mem, __rs1,		\
 				&__isn->imm, __rd, ret);		\
 		break;							\
 	}								\
 	case SIF_OP3_REG:						\
 	{								\
 		struct sparc_ifmt_op3_reg const *__isn =		\
-				to_ifmt(op3_reg, i);			\
+				to_ifmt(op3_reg, isn);			\
 		sreg *__rd, *__rs1, *__rs2;				\
 									\
-		__rd = scpu_get_reg(c, __isn->rd);			\
-		__rs1 = scpu_get_reg(c, __isn->rs1);			\
-		__rs2 = scpu_get_reg(c, __isn->rs2);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, (c)->mem, __rs1, __rs2,	\
+		__rd = scpu_get_reg(cpu, __isn->rd);			\
+		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
+		__rs2 = scpu_get_reg(cpu, __isn->rs2);			\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu->mem, __rs1, __rs2,	\
 				__rd, ret);				\
 		break;							\
 	}								\
@@ -180,109 +166,45 @@ static int isn_exec_xnor(struct cpu *cpu, struct sparc_isn const *isn)
 		ret = -1;						\
 		break;							\
 	}								\
-} while(0)
-
-static int isn_exec_stb(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, STORE, 8, ret);
-	return ret;
+									\
+	return ret;							\
 }
 
-static int isn_exec_sth(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
+#define ISN_EXEC_ENTRY_MEM(n)					\
+	ISN_EXEC_ENTRY(SI_ ## n, isn_exec_ ## n)
 
-	ISN_EXEC_OP3_MEM(cpu, isn, STORE, 16, ret);
-	return ret;
-}
+DEFINE_ISN_EXEC_MEM(STB, STORE, 8)
+DEFINE_ISN_EXEC_MEM(STH, STORE, 16)
+DEFINE_ISN_EXEC_MEM(ST, STORE, 32)
+DEFINE_ISN_EXEC_MEM(STD, STORED, 32) /* Double memory_write32 */
+DEFINE_ISN_EXEC_MEM(LDSB, LOADS, 8)
+DEFINE_ISN_EXEC_MEM(LDUB, LOADU, 8)
+DEFINE_ISN_EXEC_MEM(LDSH, LOADS, 16)
+DEFINE_ISN_EXEC_MEM(LDUH, LOADU, 16)
+DEFINE_ISN_EXEC_MEM(LD, LOADU, 32)
+DEFINE_ISN_EXEC_MEM(LDD, LOADD, 32) /* Double memory_read32 */
 
-static int isn_exec_st(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, STORE, 32, ret);
-	return ret;
-}
-
-static int isn_exec_std(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	/* Double memory_write32() */
-	ISN_EXEC_OP3_MEM(cpu, isn, STORED, 32, ret);
-	return ret;
-}
-
-static int isn_exec_ldsb(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADS, 8, ret);
-	return ret;
-}
-
-static int isn_exec_ldsh(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADS, 16, ret);
-	return ret;
-}
-
-static int isn_exec_ldub(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADU, 8, ret);
-	return ret;
-}
-
-static int isn_exec_lduh(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADU, 16, ret);
-	return ret;
-}
-
-static int isn_exec_ld(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADU, 32, ret);
-	return ret;
-}
-
-static int isn_exec_ldd(struct cpu *cpu, struct sparc_isn const *isn)
-{
-	int ret = 0;
-
-	/* Double memory_read32 */
-	ISN_EXEC_OP3_MEM(cpu, isn, LOADD, 32, ret);
-	return ret;
-}
+/* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
 static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
-	ISN_EXEC_ENTRY(SI_AND, isn_exec_and),
-	ISN_EXEC_ENTRY(SI_ANDN, isn_exec_andn),
-	ISN_EXEC_ENTRY(SI_OR, isn_exec_or),
-	ISN_EXEC_ENTRY(SI_ORN, isn_exec_orn),
-	ISN_EXEC_ENTRY(SI_XOR, isn_exec_xor),
-	ISN_EXEC_ENTRY(SI_XNOR, isn_exec_xnor),
-	ISN_EXEC_ENTRY(SI_LDSB, isn_exec_ldsb),
-	ISN_EXEC_ENTRY(SI_LDSH, isn_exec_ldsh),
-	ISN_EXEC_ENTRY(SI_LDUB, isn_exec_ldub),
-	ISN_EXEC_ENTRY(SI_LDUH, isn_exec_lduh),
-	ISN_EXEC_ENTRY(SI_LD, isn_exec_ld),
-	ISN_EXEC_ENTRY(SI_LDD, isn_exec_ldd),
-	ISN_EXEC_ENTRY(SI_STB, isn_exec_stb),
-	ISN_EXEC_ENTRY(SI_STH, isn_exec_sth),
-	ISN_EXEC_ENTRY(SI_ST, isn_exec_st),
-	ISN_EXEC_ENTRY(SI_STD, isn_exec_std),
+	ISN_EXEC_ENTRY_LOGICAL(AND),
+	ISN_EXEC_ENTRY_LOGICAL(ANDN),
+	ISN_EXEC_ENTRY_LOGICAL(OR),
+	ISN_EXEC_ENTRY_LOGICAL(ORN),
+	ISN_EXEC_ENTRY_LOGICAL(XOR),
+	ISN_EXEC_ENTRY_LOGICAL(XNOR),
+	ISN_EXEC_ENTRY_MEM(LDSB),
+	ISN_EXEC_ENTRY_MEM(LDSH),
+	ISN_EXEC_ENTRY_MEM(LDUB),
+	ISN_EXEC_ENTRY_MEM(LDUH),
+	ISN_EXEC_ENTRY_MEM(LD),
+	ISN_EXEC_ENTRY_MEM(LDD),
+	ISN_EXEC_ENTRY_MEM(STB),
+	ISN_EXEC_ENTRY_MEM(STH),
+	ISN_EXEC_ENTRY_MEM(ST),
+	ISN_EXEC_ENTRY_MEM(STD),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)
