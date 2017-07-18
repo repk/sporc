@@ -21,6 +21,7 @@ enum sisn_fmt {
 enum sid_isn {
 	SI_INVAL = 0,
 	SI_SETHI,
+	SI_AND,
 	SI_OR,
 	SI_LDSB,
 	SI_LDSH,
