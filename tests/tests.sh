@@ -7,6 +7,17 @@ test() {
 
 test sethi
 test or
+test orcc
+test orn
+test orncc
+test and
+test andcc
+test andn
+test andncc
+test xor
+test xorcc
+test xnor
+test xnorcc
 test stb
 test sth
 test st
@@ -17,14 +28,3 @@ test ldsh
 test lduh
 test ld
 test ldd
-test and
-test xor
-test andn
-test orn
-test xnor
-test orcc
-test orncc
-test andcc
-test andncc
-test xorcc
-test xnorcc
