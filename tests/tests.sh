@@ -22,3 +22,9 @@ test xor
 test andn
 test orn
 test xnor
+test orcc
+test orncc
+test andcc
+test andncc
+test xorcc
+test xnorcc
