@@ -74,6 +74,16 @@ static int isn_exec_and(struct cpu *cpu, struct sparc_isn const *isn)
 	return ret;
 }
 
+#define ISN_OP_ANDN(a, b) (~((a) & (b)))
+static int isn_exec_andn(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	int ret = 0;
+
+	ISN_EXEC_ALU(cpu, isn, ISN_OP_ANDN, ret);
+
+	return ret;
+}
+
 #define ISN_OP_XOR(a, b) ((a) ^ (b))
 static int isn_exec_xor(struct cpu *cpu, struct sparc_isn const *isn)
 {
@@ -238,6 +248,7 @@ static int isn_exec_ldd(struct cpu *cpu, struct sparc_isn const *isn)
 static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
 	ISN_EXEC_ENTRY(SI_AND, isn_exec_and),
+	ISN_EXEC_ENTRY(SI_ANDN, isn_exec_andn),
 	ISN_EXEC_ENTRY(SI_OR, isn_exec_or),
 	ISN_EXEC_ENTRY(SI_XOR, isn_exec_xor),
 	ISN_EXEC_ENTRY(SI_LDSB, isn_exec_ldsb),

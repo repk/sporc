@@ -19,3 +19,4 @@ test ld
 test ldd
 test and
 test xor
+test andn
