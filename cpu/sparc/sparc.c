@@ -23,6 +23,14 @@ struct sparc_registers {
 	sreg r[8 * (16 * SPARC_NRWIN + 16)];
 };
 
+#define PSR_ICC_OFF_N (23)
+#define PSR_ICC_OFF_Z (22)
+#define PSR_ICC_OFF_V (21)
+#define PSR_ICC_OFF_C (20)
+#define PSR_ICC_GET(sr, n) (((sr)->psr >> PSR_ICC_OFF_ ## n) & 0x1)
+#define PSR_ICC_SET(sr, n, v)						\
+	(((sr)->psr = ((sr)->psr & ~(1 << ((PSR_ICC_OFF_ ## n)))) |	\
+		(((v) & 0x1)  << (PSR_ICC_OFF_ ## n))))
 #define CWP(sr) ((sr)->psr & 0x1f)
 #define _SREG_IDX(sr, idx) (((idx) < 8) ? (idx) : (8 + (idx) + CWP(sr) * 16))
 #define SREG(sr) ((sr)->r[_SREG_IDX(sr, idx)])
@@ -44,6 +52,62 @@ sreg *scpu_get_reg(struct cpu *cpu, off_t ridx)
 		return &scpu->reg.r[ridx];
 
 	return &scpu->reg.r[CWP(&scpu->reg) * 16 + ridx];
+}
+
+uint8_t scpu_get_cc_n(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return PSR_ICC_GET(&scpu->reg, N);
+}
+
+void scpu_set_cc_n(struct cpu *cpu, uint8_t val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	PSR_ICC_SET(&scpu->reg, N, val);
+}
+
+uint8_t scpu_get_cc_z(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return PSR_ICC_GET(&scpu->reg, Z);
+}
+
+void scpu_set_cc_z(struct cpu *cpu, uint8_t val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	PSR_ICC_SET(&scpu->reg, Z, val);
+}
+
+uint8_t scpu_get_cc_v(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return PSR_ICC_GET(&scpu->reg, V);
+}
+
+void scpu_set_cc_v(struct cpu *cpu, uint8_t val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	PSR_ICC_SET(&scpu->reg, V, val);
+}
+
+uint8_t scpu_get_cc_c(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return PSR_ICC_GET(&scpu->reg, C);
+}
+
+void scpu_set_cc_c(struct cpu *cpu, uint8_t val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	PSR_ICC_SET(&scpu->reg, C, val);
 }
 
 static int scpu_fetch(struct cpu *cpu)
