@@ -127,7 +127,27 @@ DEFINE_ISN_EXEC_LOGICAL(XNOR)
 		scpu_set_cc_c(c, 0);					\
 } while(0)
 
+#define ISN_OP_SUB(a, b) ((a) - (b))
+#define ISN_ALU_CC_SUB(c, x, y, z) do					\
+{									\
+	ISN_ALU_CC_NZ(c, x, y, z);					\
+									\
+	if(((((x) >> 31) & 0x1) ^ (((y) >> 31) & 0x1)) &&		\
+		(!((((y) >> 31) & 0x1) ^ (((z) >> 31) & 0x1))))		\
+		scpu_set_cc_v(c, 1);					\
+	else								\
+		scpu_set_cc_v(c, 0);					\
+									\
+	if(((!(((x) >> 31) & 0x1)) && (((y) >> 31) & 0x1)) ||		\
+		((((y) >> 31) & 0x1) && ((!(((x) >> 31) & 0x1)) ||	\
+			(((y) >> 31) & 0x1))))				\
+		scpu_set_cc_c(c, 1);					\
+	else								\
+		scpu_set_cc_c(c, 0);					\
+} while(0)
+
 DEFINE_ISN_EXEC_ARITHMETIC(ADD)
+DEFINE_ISN_EXEC_ARITHMETIC(SUB)
 
 /* ----------------- Memory instruction ------------------- */
 
@@ -232,6 +252,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_LOGICAL(XOR),
 	ISN_EXEC_ENTRY_LOGICAL(XNOR),
 	ISN_EXEC_ENTRY_ARITHMETIC(ADD),
+	ISN_EXEC_ENTRY_ARITHMETIC(SUB),
 	ISN_EXEC_ENTRY_MEM(LDSB),
 	ISN_EXEC_ENTRY_MEM(LDSH),
 	ISN_EXEC_ENTRY_MEM(LDUB),

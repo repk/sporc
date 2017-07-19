@@ -20,6 +20,8 @@ test xnor
 test xnorcc
 test add
 test addcc
+test sub
+test subcc
 test stb
 test sth
 test st
