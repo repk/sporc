@@ -16,4 +16,8 @@ void scpu_set_cc_v(struct cpu *cpu, uint8_t val);
 uint8_t scpu_get_cc_c(struct cpu *cpu);
 void scpu_set_cc_c(struct cpu *cpu, uint8_t val);
 
+sreg scpu_get_pc(struct cpu *cpu);
+sreg scpu_get_npc(struct cpu *cpu);
+void scpu_delay_jmp(struct cpu *cpu, uint32_t addr);
+
 #endif

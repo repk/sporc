@@ -16,8 +16,8 @@ struct sparc_registers {
 	sreg tbr;
 	sreg wim;
 	sreg y;
-	sreg pc;
-	sreg npc;
+	/* pc[0] is pc, pc[1] is npc and pc[2] is filled by branche isn */
+	sreg pc[3];
 
 	/* generic registers (%g[0-7], %i[0-7], %o[0-7], %l[0-7]) */
 	sreg r[8 * (16 * SPARC_NRWIN + 16)];
@@ -110,13 +110,34 @@ void scpu_set_cc_c(struct cpu *cpu, uint8_t val)
 	PSR_ICC_SET(&scpu->reg, C, val);
 }
 
+sreg scpu_get_pc(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return scpu->reg.pc[0];
+}
+
+sreg scpu_get_npc(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return scpu->reg.pc[0];
+}
+
+void scpu_delay_jmp(struct cpu *cpu, uint32_t addr)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	scpu->reg.pc[2] = addr;
+}
+
 static int scpu_fetch(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	uint32_t rd;
 	int ret = 0;
 
-	sreg npc = scpu->reg.npc;
+	sreg npc = scpu->reg.pc[1];
 	ret = memory_fetch_isn32(cpu->mem, npc, &rd);
 	if(ret != 0)
 		goto exit;
@@ -143,8 +164,9 @@ static int scpu_exec(struct cpu *cpu)
 		return ret;
 
 	scpu->pipeline[0].isn.op = scpu->pipeline[1].isn.op;
-	scpu->reg.pc = scpu->reg.npc;
-	scpu->reg.npc += 4;
+	scpu->reg.pc[0] = scpu->reg.pc[1];
+	scpu->reg.pc[1] = scpu->reg.pc[2];
+	scpu->reg.pc[2] += 4;
 
 	return 0;
 }
@@ -155,10 +177,11 @@ static int scpu_boot(struct cpu *cpu, uintptr_t addr)
 	uint32_t rd;
 	int ret;
 
-	scpu->reg.pc = addr;
-	scpu->reg.npc = addr + 4;
+	scpu->reg.pc[0] = addr;
+	scpu->reg.pc[1] = addr + 4;
+	scpu->reg.pc[2] = addr + 8;
 
-	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc, &rd);
+	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
 	if(ret != 0)
 		goto exit;
 
