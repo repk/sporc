@@ -33,6 +33,8 @@ enum sid_isn {
 	SI_XORCC,
 	SI_XNOR,
 	SI_XNORCC,
+	SI_ADD,
+	SI_ADDCC,
 	SI_LDSB,
 	SI_LDSH,
 	SI_LDUB,

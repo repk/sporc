@@ -99,6 +99,36 @@ DEFINE_ISN_EXEC_LOGICAL(ANDN)
 DEFINE_ISN_EXEC_LOGICAL(XOR)
 DEFINE_ISN_EXEC_LOGICAL(XNOR)
 
+/* --------------- Arithmetic instruction ----------------- */
+#define DEFINE_ISN_EXEC_ARITHMETIC(op)					\
+	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)			\
+	ISN_EXEC_ALU(op ## _cc, ISN_OP_ ## op, ISN_ALU_CC_ ## op)
+
+#define ISN_EXEC_ENTRY_ARITHMETIC(op)					\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op),			\
+	ISN_EXEC_ENTRY(SI_ ## op ## CC, isn_exec_ ## op ## _cc)
+
+#define ISN_OP_ADD(a, b) ((a) + (b))
+#define ISN_ALU_CC_ADD(c, x, y, z) do					\
+{									\
+	ISN_ALU_CC_NZ(c, x, y, z);					\
+									\
+	if((!((((x) >> 31) & 0x1) ^ (((y) >> 31) & 0x1))) &&		\
+		((((x) >> 31) & 0x1) ^ (((z) >> 31) & 0x1)))		\
+		scpu_set_cc_v(c, 1);					\
+	else								\
+		scpu_set_cc_v(c, 0);					\
+									\
+	if(((((x) >> 31) & 0x1) && ((((y) >> 31) & 0x1))) ||		\
+		((!(((z) >> 31) & 0x1)) && ((((x) >> 31) & 0x1) ||	\
+			(((y) >> 31) & 0x1))))				\
+		scpu_set_cc_c(c, 1);					\
+	else								\
+		scpu_set_cc_c(c, 0);					\
+} while(0)
+
+DEFINE_ISN_EXEC_ARITHMETIC(ADD)
+
 /* ----------------- Memory instruction ------------------- */
 
 #define be8toh(a) (a) /* Kludge */
@@ -201,6 +231,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_LOGICAL(ORN),
 	ISN_EXEC_ENTRY_LOGICAL(XOR),
 	ISN_EXEC_ENTRY_LOGICAL(XNOR),
+	ISN_EXEC_ENTRY_ARITHMETIC(ADD),
 	ISN_EXEC_ENTRY_MEM(LDSB),
 	ISN_EXEC_ENTRY_MEM(LDSH),
 	ISN_EXEC_ENTRY_MEM(LDUB),

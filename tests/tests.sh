@@ -18,6 +18,8 @@ test xor
 test xorcc
 test xnor
 test xnorcc
+test add
+test addcc
 test stb
 test sth
 test st
