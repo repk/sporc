@@ -12,7 +12,7 @@ enum sisn_fmt {
 	SIF_UNKNOW = 0,
 	SIF_OP1,
 	SIF_OP2_SETHI,
-	SIF_OP2_ICC,
+	SIF_OP2_BICC,
 	SIF_OP3_REG,
 	SIF_OP3_IMM,
 	SIF_OP3_FLOAT,
@@ -49,6 +49,7 @@ enum sid_isn {
 	SI_STH,
 	SI_ST,
 	SI_STD,
+	SI_BN,
 };
 
 struct sparc_isn {
@@ -68,11 +69,10 @@ struct sparc_ifmt_op2_sethi {
 	uint8_t rd;
 };
 
-struct sparc_ifmt_op2_bcc {
+struct sparc_ifmt_op2_bicc {
 	struct sparc_isn isn;
 	uint32_t disp;
-	uint8_t a : 1;
-	uint8_t cond : 4;
+	uint8_t a;
 };
 
 struct sparc_ifmt_op3_reg {
@@ -101,7 +101,7 @@ union sparc_isn_fill {
 	struct sparc_isn isn;
 	struct sparc_ifmt_op1 op1;
 	struct sparc_ifmt_op2_sethi op2_sethi;
-	struct sparc_ifmt_op2_bcc op2_bcc;
+	struct sparc_ifmt_op2_bicc op2_bicc;
 	struct sparc_ifmt_op3_reg op3_reg;
 	struct sparc_ifmt_op3_imm op3_imm;
 	struct sparc_ifmt_op3_float op3_float;

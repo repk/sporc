@@ -33,46 +33,57 @@ static int isn_decode_op1(struct sparc_isn *isn)
 }
 
 #define ISN_OP2_RD(o) (((o) >> 25) & 0x1f)
+#define ISN_OP2_COND(o) (((o) >> 25) & 0xf)
+#define ISN_OP2_A(o) (((o) >> 29) & 0x1)
 #define ISN_OP2_IMM(o) ((o) & 0x3fffff)
+#define ISN_OP2_DISP(o) (sign_ext((o) & 0x3fffff, 22))
 
 static inline int isn_decode_op2_sethi(struct sparc_isn *isn)
 {
 	struct sparc_ifmt_op2_sethi *i = to_ifmt(op2_sethi, isn);
 
 	i->isn.fmt = SIF_OP2_SETHI;
+	i->isn.id = SI_SETHI;
 	i->rd = ISN_OP2_RD(isn->op);
 	i->imm = ISN_OP2_IMM(isn->op);
 
 	return 0;
 }
 
-struct _op2_isn_type {
-	enum sid_isn id;
-	uint8_t icc;
-};
-#define _OP2_ISN_SETHI(o, i) [o] = { .id = i }
-#define _OP2_ISN_BRANCH(o, i) [o] = { .id = i, icc = 1 }
+static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
+{
+	static enum sid_isn const _op2_bicc_id[] = {
+		[0] = SI_BN,
+	};
+	struct sparc_ifmt_op2_bicc *i = to_ifmt(op2_bicc, isn);
+	uint8_t cond, annul;
+
+	cond = ISN_OP2_COND(isn->op);
+	annul = ISN_OP2_A(isn->op);
+	if((cond >= ARRAY_SIZE(_op2_bicc_id)) || (_op2_bicc_id[cond] == 0))
+		return -1;
+
+	isn->fmt = SIF_OP2_BICC;
+	isn->id = _op2_bicc_id[cond];
+	i->a = annul;
+	i->disp = ISN_OP2_DISP(isn->op);
+
+	return 0;
+}
 
 static int isn_decode_op2(struct sparc_isn *isn)
 {
-	static struct _op2_isn_type const _isn_op2[] = {
-		_OP2_ISN_SETHI(4, SI_SETHI),
+	static int (* const _decode_op2[])(struct sparc_isn *) = {
+		[2] = isn_decode_op2_bicc,
+		[4] = isn_decode_op2_sethi,
 	};
 	uint8_t flag;
-	int ret;
 
 	flag = op_decode_flag2(isn->op);
-	if((flag >= ARRAY_SIZE(_isn_op2)) || (_isn_op2[flag].id == 0))
+	if((flag >= ARRAY_SIZE(_decode_op2)) || (_decode_op2[flag] == 0))
 		return -1;
 
-	isn->id = _isn_op2[flag].id;
-
-	if(!_isn_op2[flag].icc)
-		ret = isn_decode_op2_sethi(isn);
-	else
-		ret = -1; /* TODO handle Bicc instructions */
-
-	return ret;
+	return _decode_op2[flag](isn);
 }
 
 #define ISN_OP3_RD(o) (((o) >> 25) & 0x1f)

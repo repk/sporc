@@ -40,6 +40,7 @@ struct sparc_cpu {
 	struct cpu cpu;
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
+	uint8_t annul;
 };
 
 #define to_sparc_cpu(c) (container_of(c, struct sparc_cpu, cpu))
@@ -131,6 +132,13 @@ void scpu_delay_jmp(struct cpu *cpu, uint32_t addr)
 	scpu->reg.pc[2] = addr;
 }
 
+void scpu_annul_delay_slot(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	scpu->annul = 1;
+}
+
 static int scpu_fetch(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -162,6 +170,16 @@ static int scpu_exec(struct cpu *cpu)
 	ret = isn_exec(cpu, &scpu->pipeline[0].isn);
 	if(ret < 0)
 		return ret;
+
+	/* Cancel delay slot */
+	if(scpu->annul) {
+		scpu->reg.pc[1] = scpu->reg.pc[2];
+		scpu->reg.pc[2] += 4;
+		ret = scpu_fetch(cpu);
+		if(ret < 0)
+			return ret;
+		scpu->annul = 0;
+	}
 
 	scpu->pipeline[0].isn.op = scpu->pipeline[1].isn.op;
 	scpu->reg.pc[0] = scpu->reg.pc[1];
