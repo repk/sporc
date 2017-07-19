@@ -43,6 +43,54 @@ static int isn_exec_call(struct cpu *cpu, struct sparc_isn const *isn)
 	return 0;
 }
 
+/* ---------------- jumpl instruction Helpers ------------------ */
+
+static inline void isn_exec_jmpl_imm(struct cpu *cpu,
+		struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op3_imm const *i = to_ifmt(op3_imm, isn);
+	sreg *rd, *rs1;
+
+	rd = scpu_get_reg(cpu, i->rd);
+	rs1 = scpu_get_reg(cpu, i->rs1);
+
+	*rd = scpu_get_pc(cpu);
+	scpu_delay_jmp(cpu, *rs1 + i->imm);
+}
+
+static inline void isn_exec_jmpl_reg(struct cpu *cpu,
+		struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op3_reg const *i = to_ifmt(op3_reg, isn);
+	sreg *rd, *rs1, *rs2;
+
+	rd = scpu_get_reg(cpu, i->rd);
+	rs1 = scpu_get_reg(cpu, i->rs1);
+	rs2 = scpu_get_reg(cpu, i->rs2);
+
+	*rd = scpu_get_pc(cpu);
+	scpu_delay_jmp(cpu, *rs1 + *rs2);
+}
+
+static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	int ret = 0;
+
+	switch(isn->fmt) {
+	case SIF_OP3_IMM:
+		isn_exec_jmpl_imm(cpu, isn);
+		break;
+	case SIF_OP3_REG:
+		isn_exec_jmpl_reg(cpu, isn);
+		break;
+	default:
+		ret = -1;
+		break;
+	}
+
+	return ret;
+}
+
 /* ----------------- ALU instruction Helpers ------------------- */
 
 #define ISN_EXEC_ALU_IMM(c, i, o, cc) do {				\
@@ -266,6 +314,7 @@ DEFINE_ISN_EXEC_MEM(LDD, LOADD, 32) /* Double memory_read32 */
 static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
 	ISN_EXEC_ENTRY(SI_CALL, isn_exec_call),
+	ISN_EXEC_ENTRY(SI_JMPL, isn_exec_jmpl),
 	ISN_EXEC_ENTRY_LOGICAL(AND),
 	ISN_EXEC_ENTRY_LOGICAL(ANDN),
 	ISN_EXEC_ENTRY_LOGICAL(OR),

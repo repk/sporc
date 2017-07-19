@@ -33,3 +33,4 @@ test lduh
 test ld
 test ldd
 test call
+test jmpl

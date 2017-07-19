@@ -22,6 +22,7 @@ enum sid_isn {
 	SI_INVAL = 0,
 	SI_SETHI,
 	SI_CALL,
+	SI_JMPL,
 	SI_AND,
 	SI_ANDCC,
 	SI_ANDN,
