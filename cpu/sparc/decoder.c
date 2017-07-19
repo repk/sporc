@@ -25,6 +25,8 @@ static int isn_decode_op1(struct sparc_isn *isn)
 {
 	struct sparc_ifmt_op1 *i = to_ifmt(op1, isn);
 
+	/* Only Call instruction is of op1 type */
+	i->isn.id = SI_CALL;
 	i->isn.fmt = SIF_OP1;
 	i->disp30 = ISN_OP1_DISP(isn->op);
 	return 0;

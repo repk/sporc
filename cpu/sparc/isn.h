@@ -21,6 +21,7 @@ enum sisn_fmt {
 enum sid_isn {
 	SI_INVAL = 0,
 	SI_SETHI,
+	SI_CALL,
 	SI_AND,
 	SI_ANDCC,
 	SI_ANDN,
@@ -47,7 +48,6 @@ enum sid_isn {
 	SI_STH,
 	SI_ST,
 	SI_STD,
-	SI_CALL,
 };
 
 struct sparc_isn {

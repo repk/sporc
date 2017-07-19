@@ -23,6 +23,26 @@ static int isn_exec_sethi(struct cpu *cpu, struct sparc_isn const *isn)
 	return 0;
 }
 
+/* ----------------- call instruction Helper ------------------- */
+
+static int isn_exec_call(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op1 *i;
+	sreg pc, *o7;
+
+	if(isn->fmt != SIF_OP1)
+		return -1;
+
+	i = to_ifmt(op1, isn);
+
+	pc = scpu_get_pc(cpu);
+	o7 = scpu_get_reg(cpu, 15);
+	*o7 = pc;
+
+	scpu_delay_jmp(cpu, pc + (i->disp30 << 2));
+	return 0;
+}
+
 /* ----------------- ALU instruction Helpers ------------------- */
 
 #define ISN_EXEC_ALU_IMM(c, i, o, cc) do {				\
@@ -245,6 +265,7 @@ DEFINE_ISN_EXEC_MEM(LDD, LOADD, 32) /* Double memory_read32 */
 #define ISN_EXEC_ENTRY(i, f) [i] = f
 static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
+	ISN_EXEC_ENTRY(SI_CALL, isn_exec_call),
 	ISN_EXEC_ENTRY_LOGICAL(AND),
 	ISN_EXEC_ENTRY_LOGICAL(ANDN),
 	ISN_EXEC_ENTRY_LOGICAL(OR),
