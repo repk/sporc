@@ -48,3 +48,4 @@ test bcc
 test bcs
 test bpos
 test bneg
+test bvc

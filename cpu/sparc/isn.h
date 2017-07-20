@@ -63,6 +63,7 @@ enum sid_isn {
 	SI_BCS,
 	SI_BPOS,
 	SI_BNEG,
+	SI_BVC,
 };
 
 struct sparc_isn {
