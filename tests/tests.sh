@@ -38,3 +38,4 @@ test ba
 test bn
 test bne
 test be
+test bg
