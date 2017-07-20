@@ -47,3 +47,4 @@ test bleu
 test bcc
 test bcs
 test bpos
+test bneg
