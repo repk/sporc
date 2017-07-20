@@ -49,3 +49,4 @@ test bcs
 test bpos
 test bneg
 test bvc
+test bvs
