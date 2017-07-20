@@ -41,3 +41,4 @@ test be
 test bg
 test ble
 test bge
+test bl
