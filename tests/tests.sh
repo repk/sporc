@@ -36,3 +36,4 @@ test call
 test jmpl
 test ba
 test bn
+test bne
