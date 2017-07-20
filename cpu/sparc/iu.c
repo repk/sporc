@@ -332,6 +332,25 @@ static int isn_exec_ba(struct cpu *cpu, struct sparc_isn const *isn)
 	return 0;
 }
 
+#define DEFINE_ISN_EXEC_Bicc(n)						\
+static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
+{									\
+	struct sparc_ifmt_op2_bicc const *i = to_ifmt(op2_bicc, isn);	\
+	sreg pc;							\
+									\
+	if(!ISN_OP_ ## n(cpu)) {					\
+		if(i->a)						\
+			scpu_annul_delay_slot(cpu);			\
+		return 0;						\
+	}								\
+	pc = scpu_get_pc(cpu);						\
+	scpu_delay_jmp(cpu, pc + (i->disp << 2));			\
+	return 0;							\
+}
+
+#define ISN_EXEC_ENTRY_Bicc(n)						\
+	ISN_EXEC_ENTRY(SI_ ## n, isn_exec_ ## n)
+
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
