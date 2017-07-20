@@ -39,3 +39,4 @@ test bn
 test bne
 test be
 test bg
+test ble

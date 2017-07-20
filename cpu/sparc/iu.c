@@ -355,10 +355,13 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 #define ISN_OP_BE(c) (scpu_get_cc_z(c))
 #define ISN_OP_BG(c)							\
 	(!(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c))))
+#define ISN_OP_BLE(c)							\
+	(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c)))
 
 DEFINE_ISN_EXEC_Bicc(BNE);
 DEFINE_ISN_EXEC_Bicc(BE);
 DEFINE_ISN_EXEC_Bicc(BG);
+DEFINE_ISN_EXEC_Bicc(BLE);
 
 /* -------------- Instruction execution ---------------- */
 
@@ -390,6 +393,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_Bicc(BNE),
 	ISN_EXEC_ENTRY_Bicc(BE),
 	ISN_EXEC_ENTRY_Bicc(BG),
+	ISN_EXEC_ENTRY_Bicc(BLE),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)
