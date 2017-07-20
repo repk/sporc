@@ -45,3 +45,4 @@ test bl
 test bgu
 test bleu
 test bcc
+test bcs
