@@ -61,6 +61,7 @@ enum sid_isn {
 	SI_BLEU,
 	SI_BCC,
 	SI_BCS,
+	SI_BPOS,
 };
 
 struct sparc_isn {

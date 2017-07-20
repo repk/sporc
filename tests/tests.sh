@@ -46,3 +46,4 @@ test bgu
 test bleu
 test bcc
 test bcs
+test bpos
