@@ -34,3 +34,5 @@ test ld
 test ldd
 test call
 test jmpl
+test ba
+test bn

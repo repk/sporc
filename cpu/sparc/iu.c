@@ -308,6 +308,30 @@ DEFINE_ISN_EXEC_MEM(LDUH, LOADU, 16)
 DEFINE_ISN_EXEC_MEM(LD, LOADU, 32)
 DEFINE_ISN_EXEC_MEM(LDD, LOADD, 32) /* Double memory_read32 */
 
+/* --------------- Bicc instructions ------------------- */
+
+static int isn_exec_bn(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op2_bicc const *i = to_ifmt(op2_bicc, isn);
+
+	if(i->a)
+		scpu_annul_delay_slot(cpu);
+	return 0;
+}
+
+static int isn_exec_ba(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op2_bicc const *i = to_ifmt(op2_bicc, isn);
+	sreg pc;
+
+	pc = scpu_get_pc(cpu);
+	scpu_delay_jmp(cpu, pc + (i->disp << 2));
+
+	if(i->a)
+		scpu_annul_delay_slot(cpu);
+	return 0;
+}
+
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
@@ -333,6 +357,8 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_MEM(STH),
 	ISN_EXEC_ENTRY_MEM(ST),
 	ISN_EXEC_ENTRY_MEM(STD),
+	ISN_EXEC_ENTRY(SI_BN, isn_exec_bn),
+	ISN_EXEC_ENTRY(SI_BA, isn_exec_ba),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)

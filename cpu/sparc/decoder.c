@@ -53,6 +53,7 @@ static inline int isn_decode_op2_sethi(struct sparc_isn *isn)
 static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
 {
 	static enum sid_isn const _op2_bicc_id[] = {
+		[8] = SI_BA,
 		[0] = SI_BN,
 	};
 	struct sparc_ifmt_op2_bicc *i = to_ifmt(op2_bicc, isn);
