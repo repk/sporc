@@ -63,6 +63,7 @@ static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
 		[3] = SI_BL,
 		[12] = SI_BGU,
 		[4] = SI_BLEU,
+		[13] = SI_BCC,
 	};
 	struct sparc_ifmt_op2_bicc *i = to_ifmt(op2_bicc, isn);
 	uint8_t cond, annul;

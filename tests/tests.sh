@@ -44,3 +44,4 @@ test bge
 test bl
 test bgu
 test bleu
+test bcc
