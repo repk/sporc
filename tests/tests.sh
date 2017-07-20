@@ -37,3 +37,4 @@ test jmpl
 test ba
 test bn
 test bne
+test be

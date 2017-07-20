@@ -52,6 +52,7 @@ enum sid_isn {
 	SI_BN,
 	SI_BA,
 	SI_BNE,
+	SI_BE,
 };
 
 struct sparc_isn {
