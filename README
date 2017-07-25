@@ -1,0 +1,88 @@
+sporc
+=====
+
+Sporc is a sparc simulator. The main goal for this was to get a basic overview
+of sparc architecture.
+
+/!\ Not all instructions and features are implemented yet.
+
+Dependencies
+------------
+
+In order to build tests a sparc cross toolchain is needed.
+
+Build
+-----
+
+First set appropriate variables in mkconf/default.
+
+Then simply run:
+ $ make
+
+One can make his own mkconf by creating a file (e.g. mkconf/foo.mk), then sporc
+can be built with:
+ $ MKCONF=foo make
+
+Everything is built in ./out directory by default.
+
+Test
+----
+
+A test suite can be built with
+ $ make TESTS=1
+
+Then run
+ $ ./out/tests/tests.sh
+
+Build system
+------------
+
+The build system is based on small units call rules.mk.  In each directory
+specific variables can be specified to allow to build objects and binaries.
+Each rules.mk should begin with at least one TARGET, BUNDLE or CROSSTARGET
+name, then the following variables could be set:
+
+- <target>-CSRC: list of c source files
+- <target>-ASRC: list of assembly source files
+- <target>-FILE: list of file to copy as-is (e.g. a script file)
+- <target>-CFLAGS: target specific CFLAGS
+- <target>-LDFLAGS: target specific LDFLAGS
+- <target>-OUTDIR: Output dir for target object
+- <target>-INCLUDE: list of include directory to add in search path
+- <target>-DEPS: list of bundle dependency
+- <target>-LDSCRIPT: target specific ld version script to use at link stage
+
+<target>-{CSRC,ASRC,FILE,,LDSCRIPT,INCLUDE} are all relative to current
+rules.mk directory.
+
+TARGET is used to compile host objects, CROSSTARGET is used for compiling
+objects for the simulated target and BUNDLE is a fake target to group source
+file together (likewise using static library but avoiding the fuss of building
+the archive and using --Wl,-whole-archive at link time).
+
+For example, to build a cross binary "foobar" from the sources sources ./foo.c
+and a bundle composed of asm/bar.s  and baz.c with the final binary being in
+"./mydir/foobar", one could do :
+
+----------------- 8< ------------------
+cat > ./rules.mk << EOF
+CROSSTARGET = foobar
+
+foobar-OUTDIR = mydir
+foobar-CSRC = foo.c
+foobar-DEPS = b-fb
+
+BUNDLE = b-fb
+b-fb-CSRC = baz.c
+EOF
+
+cat > ./asm/rules.mk << EOF
+BUNDLE = b-fb
+
+b-fb-ASRC=bar.s
+EOF
+----------------- 8< ------------------
+
+Compilation variables such as compiler, linker and overall flags could be set
+in a mkconf/<conf>.mk file. To use it, set MKCONF to the new <conf> name before
+running make (eg "MKCONF=solaris make" will look for mkconf/solaris.mk).
