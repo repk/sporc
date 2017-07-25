@@ -1,8 +1,9 @@
 #!/bin/sh
 
+RES=""
+
 test() {
-	echo -n "Test ${1}:\t\t"
-	$(dirname ${0})/t-${1}
+	RES="${RES} Test ${1}:\t\t $($(dirname ${0})/t-${1})\n"
 }
 
 test sethi
@@ -50,3 +51,5 @@ test bpos
 test bneg
 test bvc
 test bvs
+
+echo -e "${RES}" | column -t
