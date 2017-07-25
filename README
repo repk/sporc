@@ -11,6 +11,18 @@ Dependencies
 
 In order to build tests a sparc cross toolchain is needed.
 
+Create a sparc toolchain (using buildroot)
+------------------------------------------
+ $ mkdir toolchain
+ $ cd toolchain
+ $ wget https://buildroot.uclibc.org/downloads/buildroot-2017.02.4.tar.bz2
+ $ tar xvf buildroot-2017.02.4.tar.bz2
+ $ cd buildroot-2017.02.4
+ $ make qemu_sparc_ss10_defconfig
+ $ make -j8
+ $ export PATH=${PATH}:${PWD}/output/host/usr/bin
+ $ export CROSS=sparc-linux-
+
 Build
 -----
 
