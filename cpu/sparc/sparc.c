@@ -31,8 +31,10 @@ struct sparc_registers {
 #define PSR_ICC_SET(sr, n, v)						\
 	(((sr)->psr = ((sr)->psr & ~(1 << ((PSR_ICC_OFF_ ## n)))) |	\
 		(((v) & 0x1)  << (PSR_ICC_OFF_ ## n))))
-#define CWP(sr) ((sr)->psr & 0x1f)
-#define _SREG_IDX(sr, idx) (((idx) < 8) ? (idx) : (8 + (idx) + CWP(sr) * 16))
+#define PSR_CWP(sr) ((sr)->psr & 0x1f)
+#define PSR_SET_CWP(sr, v) ((sr)->psr = ((sr)->psr & ~(0x1f)) | ((v) & 0x1f))
+#define _SREG_IDX(sr, idx) (((idx) < 8) ? (idx) :			\
+		(8 + (idx) + PSR_CWP(sr) * 16))
 #define SREG(sr) ((sr)->r[_SREG_IDX(sr, idx)])
 
 #define SPARC_PIPESZ 2
@@ -52,7 +54,7 @@ sreg *scpu_get_reg(struct cpu *cpu, off_t ridx)
 	if(ridx < 8)
 		return &scpu->reg.r[ridx];
 
-	return &scpu->reg.r[CWP(&scpu->reg) * 16 + ridx];
+	return &scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx];
 }
 
 uint8_t scpu_get_cc_n(struct cpu *cpu)
@@ -137,6 +139,34 @@ void scpu_annul_delay_slot(struct cpu *cpu)
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
 	scpu->annul = 1;
+}
+
+void scpu_window_save(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	uint8_t cwp = PSR_CWP(&scpu->reg);
+
+	cwp = ((uint8_t)(cwp - 1)) % SPARC_NRWIN;
+
+	/* TODO Trap on window underflow */
+	if(scpu->reg.wim & (1 << cwp))
+		abort();
+
+	PSR_SET_CWP(&scpu->reg, cwp);
+}
+
+void scpu_window_restore(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	uint8_t cwp = PSR_CWP(&scpu->reg);
+
+	cwp = (cwp + 1) % SPARC_NRWIN;
+
+	/* TODO Trap on window underflow */
+	if(scpu->reg.wim & (1 << cwp))
+		abort();
+
+	PSR_SET_CWP(&scpu->reg, cwp);
 }
 
 static int scpu_fetch(struct cpu *cpu)

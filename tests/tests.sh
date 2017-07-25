@@ -51,5 +51,6 @@ test bpos
 test bneg
 test bvc
 test bvs
+test save-restore
 
 echo -e "${RES}" | column -t

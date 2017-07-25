@@ -20,5 +20,7 @@ sreg scpu_get_pc(struct cpu *cpu);
 sreg scpu_get_npc(struct cpu *cpu);
 void scpu_delay_jmp(struct cpu *cpu, uint32_t addr);
 void scpu_annul_delay_slot(struct cpu *cpu);
+void scpu_window_save(struct cpu *cpu);
+void scpu_window_restore(struct cpu *cpu);
 
 #endif

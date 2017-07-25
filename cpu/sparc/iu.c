@@ -383,6 +383,63 @@ DEFINE_ISN_EXEC_Bicc(BNEG);
 DEFINE_ISN_EXEC_Bicc(BVC);
 DEFINE_ISN_EXEC_Bicc(BVS);
 
+/* -------------- Window isn execution ---------------- */
+
+#define ISN_EXEC_WIN_IMM(c, i, o) do {					\
+	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
+	sreg *__rd, *__rs1;						\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	o(c);								\
+	__rd = scpu_get_reg(c, __isn->rd);				\
+	*__rd = *__rs1 + __isn->imm;					\
+} while(0)
+
+#define ISN_EXEC_WIN_REG(c, i, o) do {					\
+	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
+	sreg *__rd, *__rs1, *__rs2;					\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	__rs2 = scpu_get_reg(c, __isn->rs2);				\
+	o(c);								\
+	__rd = scpu_get_reg(c, __isn->rd);				\
+	*__rd = *__rs1 + *__rs2;					\
+} while(0)
+
+#define ISN_EXEC_WIN(n, op)						\
+static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
+{									\
+	int ret = 0;							\
+									\
+	switch(isn->fmt) {						\
+	case SIF_OP3_IMM:						\
+		ISN_EXEC_WIN_IMM(cpu, isn, op);				\
+		break;							\
+	case SIF_OP3_REG:						\
+		ISN_EXEC_WIN_REG(cpu, isn, op);				\
+		break;							\
+	default:							\
+		ret = -1;						\
+		break;							\
+	}								\
+									\
+	return ret;							\
+}
+
+#define DEFINE_ISN_EXEC_WIN(op)						\
+	ISN_EXEC_WIN(op, ISN_OP_ ## op)
+
+#define ISN_EXEC_ENTRY_WIN(op)						\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
+
+#define ISN_OP_SAVE scpu_window_save
+#define ISN_OP_RESTORE scpu_window_restore
+
+DEFINE_ISN_EXEC_WIN(SAVE);
+DEFINE_ISN_EXEC_WIN(RESTORE);
+
+
+
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
@@ -424,6 +481,8 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_Bicc(BNEG),
 	ISN_EXEC_ENTRY_Bicc(BVC),
 	ISN_EXEC_ENTRY_Bicc(BVS),
+	ISN_EXEC_ENTRY_WIN(SAVE),
+	ISN_EXEC_ENTRY_WIN(RESTORE),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)
