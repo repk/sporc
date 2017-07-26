@@ -40,13 +40,22 @@ struct sparc_registers {
 #define SPARC_PIPESZ 2
 struct sparc_cpu {
 	struct cpu cpu;
+	/* Cpu instruction pipeline */
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
+	/* Annul next instruction flag */
 	uint8_t annul;
 };
 
 #define to_sparc_cpu(c) (container_of(c, struct sparc_cpu, cpu))
 
+/**
+ * Get a register from its opcode index
+ *
+ * @param cpu: cpu to fetch register from
+ * @param ridx: register index
+ * @return: A pointer to the register index
+ */
 sreg *scpu_get_reg(struct cpu *cpu, off_t ridx)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -57,6 +66,12 @@ sreg *scpu_get_reg(struct cpu *cpu, off_t ridx)
 	return &scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx];
 }
 
+/**
+ * Get negative conditional code flag value
+ *
+ * @param cpu: cpu to get conditional code from
+ * @return: Value of conditional code flag
+ */
 uint8_t scpu_get_cc_n(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -64,6 +79,12 @@ uint8_t scpu_get_cc_n(struct cpu *cpu)
 	return PSR_ICC_GET(&scpu->reg, N);
 }
 
+/**
+ * Set negative conditional code flag value
+ *
+ * @param cpu: cpu to set conditional code to
+ * @param val: Value of conditional code flag
+ */
 void scpu_set_cc_n(struct cpu *cpu, uint8_t val)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -71,6 +92,12 @@ void scpu_set_cc_n(struct cpu *cpu, uint8_t val)
 	PSR_ICC_SET(&scpu->reg, N, val);
 }
 
+/**
+ * Get zero conditional code flag value
+ *
+ * @param cpu: cpu to get conditional code from
+ * @return: Value of conditional code flag
+ */
 uint8_t scpu_get_cc_z(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -78,6 +105,12 @@ uint8_t scpu_get_cc_z(struct cpu *cpu)
 	return PSR_ICC_GET(&scpu->reg, Z);
 }
 
+/**
+ * Set zero conditional code flag value
+ *
+ * @param cpu: cpu to set conditional code to
+ * @param val: Value of conditional code flag
+ */
 void scpu_set_cc_z(struct cpu *cpu, uint8_t val)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -85,6 +118,12 @@ void scpu_set_cc_z(struct cpu *cpu, uint8_t val)
 	PSR_ICC_SET(&scpu->reg, Z, val);
 }
 
+/**
+ * Get overflow conditional code flag value
+ *
+ * @param cpu: cpu to get conditional code from
+ * @return: Value of conditional code flag
+ */
 uint8_t scpu_get_cc_v(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -92,6 +131,12 @@ uint8_t scpu_get_cc_v(struct cpu *cpu)
 	return PSR_ICC_GET(&scpu->reg, V);
 }
 
+/**
+ * Set overflow conditional code flag value
+ *
+ * @param cpu: cpu to set conditional code to
+ * @param val: Value of conditional code flag
+ */
 void scpu_set_cc_v(struct cpu *cpu, uint8_t val)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -99,6 +144,12 @@ void scpu_set_cc_v(struct cpu *cpu, uint8_t val)
 	PSR_ICC_SET(&scpu->reg, V, val);
 }
 
+/**
+ * Get carry conditional code flag value
+ *
+ * @param cpu: cpu to get conditional code from
+ * @return: Value of conditional code flag
+ */
 uint8_t scpu_get_cc_c(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -106,6 +157,12 @@ uint8_t scpu_get_cc_c(struct cpu *cpu)
 	return PSR_ICC_GET(&scpu->reg, C);
 }
 
+/**
+ * Set carry conditional code flag value
+ *
+ * @param cpu: cpu to set conditional code to
+ * @param val: Value of conditional code flag
+ */
 void scpu_set_cc_c(struct cpu *cpu, uint8_t val)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -113,6 +170,12 @@ void scpu_set_cc_c(struct cpu *cpu, uint8_t val)
 	PSR_ICC_SET(&scpu->reg, C, val);
 }
 
+/**
+ * Get PC register value
+ *
+ * @param cpu: cpu to get PC register from
+ * @return: PC reg value
+ */
 sreg scpu_get_pc(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -120,6 +183,12 @@ sreg scpu_get_pc(struct cpu *cpu)
 	return scpu->reg.pc[0];
 }
 
+/**
+ * Get nPC register value
+ *
+ * @param cpu: cpu to get nPC register from
+ * @return: nPC reg value
+ */
 sreg scpu_get_npc(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -127,6 +196,12 @@ sreg scpu_get_npc(struct cpu *cpu)
 	return scpu->reg.pc[0];
 }
 
+/**
+ * Prepare a delay jump
+ *
+ * @param cpu: cpu that need to jump
+ * @return: delay jump address
+ */
 void scpu_delay_jmp(struct cpu *cpu, uint32_t addr)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -134,6 +209,11 @@ void scpu_delay_jmp(struct cpu *cpu, uint32_t addr)
 	scpu->reg.pc[2] = addr;
 }
 
+/**
+ * Set the annul delay slot flag
+ *
+ * @param cpu: cpu that need to cancel its delay slot
+ */
 void scpu_annul_delay_slot(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -141,6 +221,11 @@ void scpu_annul_delay_slot(struct cpu *cpu)
 	scpu->annul = 1;
 }
 
+/**
+ * Enter a new register window
+ *
+ * @param cpu: current cpu
+ */
 void scpu_window_save(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -155,6 +240,11 @@ void scpu_window_save(struct cpu *cpu)
 	PSR_SET_CWP(&scpu->reg, cwp);
 }
 
+/**
+ * Exit current register window
+ *
+ * @param cpu: current cpu
+ */
 void scpu_window_restore(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -211,7 +301,9 @@ static int scpu_exec(struct cpu *cpu)
 		scpu->annul = 0;
 	}
 
+	/* Move the pipeline to the next instruction */
 	scpu->pipeline[0].isn.op = scpu->pipeline[1].isn.op;
+	/* Set next instruction PC registers values */
 	scpu->reg.pc[0] = scpu->reg.pc[1];
 	scpu->reg.pc[1] = scpu->reg.pc[2];
 	scpu->reg.pc[2] += 4;
@@ -225,10 +317,14 @@ static int scpu_boot(struct cpu *cpu, uintptr_t addr)
 	uint32_t rd;
 	int ret;
 
+	/* Initialize PC registers */
 	scpu->reg.pc[0] = addr;
 	scpu->reg.pc[1] = addr + 4;
 	scpu->reg.pc[2] = addr + 8;
 
+	/* TODO initialize special registers */
+
+	/* Prefetch the first instruction */
 	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
 	if(ret != 0)
 		goto exit;

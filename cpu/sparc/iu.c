@@ -93,6 +93,11 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
 
 /* ----------------- ALU instruction Helpers ------------------- */
 
+/**
+ * Template for an ALU instruction that uses immediate, o is the actual
+ * instruction operation (e.g. addition, substraction, ...) and cc is a
+ * function that sets the proper condition codes
+ */
 #define ISN_EXEC_ALU_IMM(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
 	sreg *__rd, *__rs1, __tmp;					\
@@ -104,6 +109,11 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
 	*__rd = __tmp;							\
 } while(0)
 
+/**
+ * Template for an ALU instruction that uses register, o is the actual
+ * instruction operation (e.g. addition, substraction, ...) and cc is a
+ * function that sets the proper condition codes
+ */
 #define ISN_EXEC_ALU_REG(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
 	sreg *__rd, *__rs1, *__rs2, __tmp;				\
@@ -116,6 +126,9 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
 	*__rd = __tmp;							\
 } while(0)
 
+/**
+ * ALU instruction handler definition template
+ */
 #define ISN_EXEC_ALU(n, op, cc)						\
 static int								\
 isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
@@ -137,7 +150,9 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 	return ret;							\
 }
 
+/* Common codition code setter callback for non conditional ALU isn */
 #define ISN_ALU_CC_NOP(c, x, y, z)
+/* Common codition code setter callback for all conditional logical isn */
 #define ISN_ALU_CC_NZ(c, x, y, z) do {					\
 	scpu_set_cc_n(c, (z >> 31) & 0x1);				\
 	scpu_set_cc_z(c, ((z == 0) ? 1 : 0));				\
@@ -145,14 +160,17 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 
 /* ----------------- Logical instruction ------------------- */
 
+/* Define a logical instruction handler (unconditional and conditional) */
 #define DEFINE_ISN_EXEC_LOGICAL(op)					\
 	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)			\
 	ISN_EXEC_ALU(op ## _cc, ISN_OP_ ## op, ISN_ALU_CC_NZ)
 
+/* Define instruction handler entries for the big instruction dispatch array */
 #define ISN_EXEC_ENTRY_LOGICAL(op)					\
 	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op),			\
 	ISN_EXEC_ENTRY(SI_ ## op ## CC, isn_exec_ ## op ## _cc)
 
+/* Logical instruction operation callbacks */
 #define ISN_OP_OR(a, b) ((a) | (b))
 #define ISN_OP_ORN(a, b) (~((a) | (b)))
 #define ISN_OP_AND(a, b) ((a) & (b))
@@ -160,6 +178,7 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 #define ISN_OP_XOR(a, b) ((a) ^ (b))
 #define ISN_OP_XNOR(a, b) (~((a) ^ (b)))
 
+/* Define all logical instruction handlers */
 DEFINE_ISN_EXEC_LOGICAL(OR)
 DEFINE_ISN_EXEC_LOGICAL(ORN)
 DEFINE_ISN_EXEC_LOGICAL(AND)
@@ -254,6 +273,11 @@ DEFINE_ISN_EXEC_ARITHMETIC(SUB)
 	}								\
 } while(0);
 
+/**
+ * Template for defining an handler for an memory (fetch/load) instruction,
+ * op is the actual memory operation callback (load, fetch, ...) and sz is
+ * the size of the memory to load or fetch.
+ */
 #define DEFINE_ISN_EXEC_MEM(n, op, sz)					\
 static int								\
 isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
@@ -297,6 +321,7 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 #define ISN_EXEC_ENTRY_MEM(n)					\
 	ISN_EXEC_ENTRY(SI_ ## n, isn_exec_ ## n)
 
+/* Define all type of memory instructions */
 DEFINE_ISN_EXEC_MEM(STB, STORE, 8)
 DEFINE_ISN_EXEC_MEM(STH, STORE, 16)
 DEFINE_ISN_EXEC_MEM(ST, STORE, 32)
@@ -332,6 +357,7 @@ static int isn_exec_ba(struct cpu *cpu, struct sparc_isn const *isn)
 	return 0;
 }
 
+/* Define a branch instruction handler template */
 #define DEFINE_ISN_EXEC_Bicc(n)						\
 static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 {									\
@@ -351,6 +377,10 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 #define ISN_EXEC_ENTRY_Bicc(n)						\
 	ISN_EXEC_ENTRY(SI_ ## n, isn_exec_ ## n)
 
+/* 
+ * Define all branches instruction callbacks that tests the proper conditional
+ * code flags
+ */
 #define ISN_OP_BNE(c) (!scpu_get_cc_z(c))
 #define ISN_OP_BE(c) (scpu_get_cc_z(c))
 #define ISN_OP_BG(c)							\
@@ -368,6 +398,7 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 #define ISN_OP_BVC(c) (!scpu_get_cc_v(c))
 #define ISN_OP_BVS(c) (scpu_get_cc_v(c))
 
+/* Branches instruction handler definition */
 DEFINE_ISN_EXEC_Bicc(BNE);
 DEFINE_ISN_EXEC_Bicc(BE);
 DEFINE_ISN_EXEC_Bicc(BG);
@@ -383,8 +414,9 @@ DEFINE_ISN_EXEC_Bicc(BNEG);
 DEFINE_ISN_EXEC_Bicc(BVC);
 DEFINE_ISN_EXEC_Bicc(BVS);
 
-/* -------------- Window isn execution ---------------- */
+/* ---------- Window isn (save/restore) execution ------------ */
 
+/* Template for window register instruction that uses immediate */
 #define ISN_EXEC_WIN_IMM(c, i, o) do {					\
 	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
 	sreg *__rd, *__rs1;						\
@@ -395,6 +427,7 @@ DEFINE_ISN_EXEC_Bicc(BVS);
 	*__rd = *__rs1 + __isn->imm;					\
 } while(0)
 
+/* Template for window register instruction that uses register */
 #define ISN_EXEC_WIN_REG(c, i, o) do {					\
 	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
 	sreg *__rd, *__rs1, *__rs2;					\
@@ -406,6 +439,7 @@ DEFINE_ISN_EXEC_Bicc(BVS);
 	*__rd = *__rs1 + *__rs2;					\
 } while(0)
 
+/* Template for window register instruction */
 #define ISN_EXEC_WIN(n, op)						\
 static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 {									\
@@ -435,14 +469,15 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 #define ISN_OP_SAVE scpu_window_save
 #define ISN_OP_RESTORE scpu_window_restore
 
+/* Define all window register instruction handlers */
 DEFINE_ISN_EXEC_WIN(SAVE);
 DEFINE_ISN_EXEC_WIN(RESTORE);
-
-
 
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
+
+/* Instruction handler dispatch array */
 static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
 	ISN_EXEC_ENTRY(SI_CALL, isn_exec_call),

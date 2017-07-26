@@ -4,16 +4,19 @@
 
 #include "isn.h"
 
+/* Decode flag for type 0 instruction */
 static inline uint8_t op_decode_flag0(opcode op)
 {
 	return (op >> 30) & 0x3;
 }
 
+/* Decode flag for type 2 instruction */
 static inline uint8_t op_decode_flag2(opcode op)
 {
 	return (op >> 22) & 0x7;
 }
 
+/* Decode flag for type 3 instruction */
 static inline uint8_t op_decode_flag3(opcode op)
 {
 	return (op >> 19) & 0x3f;
@@ -50,8 +53,12 @@ static inline int isn_decode_op2_sethi(struct sparc_isn *isn)
 	return 0;
 }
 
+/**
+ * Decode a type 2 branch instruction
+ */
 static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
 {
+	/* List of type 2 instruction indexed by its opcode's flag value */
 	static enum sid_isn const _op2_bicc_id[] = {
 		[8] = SI_BA,
 		[0] = SI_BN,
@@ -88,6 +95,9 @@ static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
 
 static int isn_decode_op2(struct sparc_isn *isn)
 {
+	/**
+	 * Type 2 instructions are splitted into sethi and branch instructions
+	 */
 	static int (* const _decode_op2[])(struct sparc_isn *) = {
 		[2] = isn_decode_op2_bicc,
 		[4] = isn_decode_op2_sethi,
@@ -107,6 +117,9 @@ static int isn_decode_op2(struct sparc_isn *isn)
 #define ISN_OP3_ASI(o) (((o) >> 5) & 0xff)
 #define ISN_OP3_RS2(o) ((o) & 0x1f)
 
+/**
+ * Decode a type 3 instruction that uses immediate
+ */
 static int isn_decode_op3_int_imm(struct sparc_isn *isn)
 {
 	struct sparc_ifmt_op3_imm *i = to_ifmt(op3_imm, isn);
@@ -119,6 +132,9 @@ static int isn_decode_op3_int_imm(struct sparc_isn *isn)
 	return 0;
 }
 
+/**
+ * Decode a type 3 instruction that uses register
+ */
 static int isn_decode_op3_int_reg(struct sparc_isn *isn)
 {
 	struct sparc_ifmt_op3_reg *i = to_ifmt(op3_reg, isn);
@@ -139,6 +155,10 @@ struct _op3_isn_type {
 #define _OP3_ISN_INT(o, i) [o] = { .id = i, }
 #define _OP3_ISN_FLOAT(o, i) [o] = { .id = i, .isfloat = 1, }
 
+/**
+ * Common code for type 3 instruction decoding, splitted in float, immediate and
+ * register typed instructions
+ */
 static inline int isn_decode_op3(struct sparc_isn *isn,
 		struct _op3_isn_type const it[], size_t sz)
 {
@@ -163,6 +183,7 @@ static inline int isn_decode_op3(struct sparc_isn *isn,
 
 static int isn_decode_op3_2(struct sparc_isn *isn)
 {
+	/* Type 3-2 instruction list, indexed by their opcode flag value */
 	static struct _op3_isn_type const _isn_op3_2[] = {
 		_OP3_ISN_INT(1, SI_AND),
 		_OP3_ISN_INT(17, SI_ANDCC),
@@ -190,6 +211,7 @@ static int isn_decode_op3_2(struct sparc_isn *isn)
 
 static int isn_decode_op3_3(struct sparc_isn *isn)
 {
+	/* Type 3-3 instruction list, indexed by their opcode flag value */
 	static struct _op3_isn_type const _isn_op3_3[] = {
 		_OP3_ISN_INT(9, SI_LDSB),
 		_OP3_ISN_INT(10, SI_LDSH),
