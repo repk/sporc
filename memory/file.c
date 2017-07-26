@@ -14,23 +14,33 @@
 
 #define FMEM_MAPSZ 16
 struct fmem_map_addr {
+	/* Actual mapp'ed memory data */
 	uint8_t *mapmem;
+	/* Virtual map address */
 	uintptr_t addr;
+	/* Size of map */
 	size_t size;
+	/* Offset in opened file */
 	off_t off;
+	/* Permission for this particular map chunk */
 	uint8_t perm;
 };
 
 struct filemem {
 	struct memory mem;
+	/* Memory map array */
 	struct fmem_map_addr maddr[FMEM_MAPSZ];
+	/* Size of the opened file */
 	size_t size;
+	/* Opened file fd */
 	int fd;
+	/* Opened file most permissive rights */
 	uint8_t perm;
 };
 
 #define to_filemem(m) (container_of(m, struct filemem, mem))
 
+/* Convert a sporc file permission to a POSIX one */
 static inline int fmem_perm_flag(uint8_t perm)
 {
 	int flag = -1;
@@ -59,6 +69,7 @@ static inline int fmem_perm_flag(uint8_t perm)
 #define FMEM_HALF(mem, off) (*((uint16_t *)((mem) + (off))))
 #define FMEM_WORD(mem, off) (*((uint32_t *)((mem) + (off))))
 
+/* Find a map in plugin's map array */
 static inline struct fmem_map_addr *fmem_get_map(struct memory *mem,
 		uintptr_t addr, size_t sz)
 {
@@ -235,6 +246,7 @@ static int fmem_unmap(struct memory *mem, uintptr_t addr, size_t sz)
 	struct filemem *fm = to_filemem(mem);
 	size_t i;
 
+	/* Find the requested map in the map array */
 	for(i = 0; i < ARRAY_SIZE(fm->maddr); ++i)
 		if((fm->maddr[i].addr == addr) &&
 				((fm->maddr[i].size == sz) ||
@@ -258,6 +270,7 @@ static struct memory *fmem_create(char const *file)
 	int err, flag, fd;
 	uint8_t perm = 0;
 
+	/* Try to mmap file with more permissive rights possible (R|W) */
 	err = access(file, R_OK);
 	if(err == 0)
 		perm |= MP_R;
@@ -266,12 +279,14 @@ static struct memory *fmem_create(char const *file)
 	if(err == 0)
 		perm |= MP_W;
 
+	/* Find file size */
 	err = stat(file, &st);
 	if(err != 0) {
 		PERR("Cannot stat %s\n", file);
 		goto exit;
 	}
 
+	/* Get POSIX permission flag */
 	flag = fmem_perm_flag(perm);
 	if(flag < 0) {
 		ERR("Invalid perm 0x%x\n", perm);
@@ -290,7 +305,6 @@ static struct memory *fmem_create(char const *file)
 		goto exit;
 	}
 
-	fm->perm = 0;
 	fm->fd = fd;
 	fm->perm = perm;
 	fm->size = st.st_size;
