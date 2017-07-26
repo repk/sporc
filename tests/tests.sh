@@ -53,4 +53,4 @@ test bvc
 test bvs
 test save-restore
 
-echo -e "${RES}" | column -t
+printf "${RES}" | column -t
