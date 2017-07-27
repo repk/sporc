@@ -3,7 +3,7 @@
 RES=""
 
 test() {
-	RES="${RES} Test ${1}:\t\t $($(dirname ${0})/t-${1})\n"
+	RES="${RES} Test ${1}:\t\t $($(dirname ${0})/t-${1} 2>&1)\n"
 }
 
 test sethi
