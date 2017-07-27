@@ -179,6 +179,7 @@ $(foreach o, $(_$(1)_AOBJ), $(call aobj-rule,$(1),$(o)))
 endef
 
 define target-rule
+ifneq ($(_$(1)_COBJ) $(_$(1)_AOBJ) $(_$(1)_DEP_OBJ),)
 $(2): $(_$(1)_COBJ) $(_$(1)_AOBJ) $(_$(1)_DEP_OBJ)
 	@mkdir -p $$(dir $$@)
 	$$(CC) -o $$@ $$^ $$(LDFLAGS) $$(_$(1)_LDFLAGS)
@@ -190,9 +191,14 @@ $(2)-clean: $(_$(1)_COBJ:%=%-clean) $(_$(1)_AOBJ:%=%-clean) \
 
 $(foreach o, $(_$(1)_COBJ), $(call cobj-rule,$(1),$(o)))
 $(foreach o, $(_$(1)_AOBJ), $(call aobj-rule,$(1),$(o)))
+else
+$(2):
+$(2)-clean:
+endif
 endef
 
 define cross-target-rule
+ifneq ($(_$(1)_COBJ) $(_$(1)_AOBJ) $(_$(1)_DEP_OBJ),)
 $(2).elf: $(_$(1)_COBJ) $(_$(1)_AOBJ)
 	@mkdir -p $$(dir $$@)
 	$$(CROSSCC) -o $$@ $$^ $$(CROSSLDFLAGS) $$(_$(1)_LDFLAGS)
@@ -207,6 +213,10 @@ $(2)-clean: $(_$(1)_COBJ:%=%-clean) $(_$(1)_AOBJ:%=%-clean)
 
 $(foreach o, $(_$(1)_COBJ), $(call cross-cobj-rule,$(1),$(o)))
 $(foreach o, $(_$(1)_AOBJ), $(call cross-aobj-rule,$(1),$(o)))
+else
+$(2):
+$(2)-clean:
+endif
 endef
 
 $(foreach t, $(_BUNDLES), \
