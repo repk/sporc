@@ -11,15 +11,13 @@
 static int isn_exec_sethi(struct cpu *cpu, struct sparc_isn const *isn)
 {
 	struct sparc_ifmt_op2_sethi *i;
-	sreg *rd;
 
 	if(isn->fmt != SIF_OP2_SETHI)
 		return -1;
 
 	i = to_ifmt(op2_sethi, isn);
 
-	rd = scpu_get_reg(cpu, i->rd);
-	*rd = i->imm << 10;
+	scpu_set_reg(cpu, i->rd, i->imm << 10);
 	return 0;
 }
 
@@ -28,7 +26,7 @@ static int isn_exec_sethi(struct cpu *cpu, struct sparc_isn const *isn)
 static int isn_exec_call(struct cpu *cpu, struct sparc_isn const *isn)
 {
 	struct sparc_ifmt_op1 *i;
-	sreg pc, *o7;
+	sreg pc;
 
 	if(isn->fmt != SIF_OP1)
 		return -1;
@@ -36,8 +34,7 @@ static int isn_exec_call(struct cpu *cpu, struct sparc_isn const *isn)
 	i = to_ifmt(op1, isn);
 
 	pc = scpu_get_pc(cpu);
-	o7 = scpu_get_reg(cpu, 15);
-	*o7 = pc;
+	scpu_set_reg(cpu, 15, pc);
 
 	scpu_delay_jmp(cpu, pc + (i->disp30 << 2));
 	return 0;
@@ -49,27 +46,25 @@ static inline void isn_exec_jmpl_imm(struct cpu *cpu,
 		struct sparc_isn const *isn)
 {
 	struct sparc_ifmt_op3_imm const *i = to_ifmt(op3_imm, isn);
-	sreg *rd, *rs1;
+	sreg rs1;
 
-	rd = scpu_get_reg(cpu, i->rd);
 	rs1 = scpu_get_reg(cpu, i->rs1);
 
-	*rd = scpu_get_pc(cpu);
-	scpu_delay_jmp(cpu, *rs1 + i->imm);
+	scpu_set_reg(cpu, i->rd, scpu_get_pc(cpu));
+	scpu_delay_jmp(cpu, rs1 + i->imm);
 }
 
 static inline void isn_exec_jmpl_reg(struct cpu *cpu,
 		struct sparc_isn const *isn)
 {
 	struct sparc_ifmt_op3_reg const *i = to_ifmt(op3_reg, isn);
-	sreg *rd, *rs1, *rs2;
+	sreg rs1, rs2;
 
-	rd = scpu_get_reg(cpu, i->rd);
 	rs1 = scpu_get_reg(cpu, i->rs1);
 	rs2 = scpu_get_reg(cpu, i->rs2);
 
-	*rd = scpu_get_pc(cpu);
-	scpu_delay_jmp(cpu, *rs1 + *rs2);
+	scpu_set_reg(cpu, i->rd, scpu_get_pc(cpu));
+	scpu_delay_jmp(cpu, rs1 + rs2);
 }
 
 static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
@@ -100,13 +95,12 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
  */
 #define ISN_EXEC_ALU_IMM(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
-	sreg *__rd, *__rs1, __tmp;					\
+	sreg __rs1, __tmp;						\
 									\
-	__rd = scpu_get_reg(c, __isn->rd);				\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
-	__tmp = o(*__rs1, __isn->imm);					\
-	cc(c, *__rs1, __isn->imm, __tmp);				\
-	*__rd = __tmp;							\
+	__tmp = o(__rs1, __isn->imm);					\
+	cc(c, __rs1, __isn->imm, __tmp);				\
+	scpu_set_reg(c, __isn->rd, __tmp);				\
 } while(0)
 
 /**
@@ -116,14 +110,13 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
  */
 #define ISN_EXEC_ALU_REG(c, i, o, cc) do {				\
 	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
-	sreg *__rd, *__rs1, *__rs2, __tmp;				\
+	sreg __rs1, __rs2, __tmp;					\
 									\
-	__rd = scpu_get_reg(c, __isn->rd);				\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
 	__rs2 = scpu_get_reg(c, __isn->rs2);				\
-	__tmp = o(*__rs1, *__rs2);					\
-	cc(c, *__rs1, *__rs2, __tmp);					\
-	*__rd = __tmp;							\
+	__tmp = o(__rs1, __rs2);					\
+	cc(c, __rs1, __rs2, __tmp);					\
+	scpu_set_reg(c, __isn->rd, __tmp);				\
 } while(0)
 
 /**
@@ -241,35 +234,41 @@ DEFINE_ISN_EXEC_ARITHMETIC(SUB)
 #define be8toh(a) (a) /* Kludge */
 #define htobe8(a) (a) /* Kludge */
 
-#define ISN_EXEC_OP3_MEM_STORE(sz, m, a, b, c, ret) do {		\
-	ret = memory_write ## sz(m, *(a) + *(b), htobe ## sz(*(c)));	\
+#define ISN_EXEC_OP3_MEM_STORE(sz, c, a, b, ridx, ret) do {		\
+	ret = memory_write ## sz((c)->mem, (a) + (b),			\
+			htobe ## sz(scpu_get_reg(c, ridx)));		\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_STORED(sz, m, a, b, c, ret) do {		\
-	ret = memory_write ## sz(m, *(a) + *(b), htobe ## sz(*(c)));	\
+#define ISN_EXEC_OP3_MEM_STORED(sz, c, a, b, ridx, ret) do {		\
+	ret = memory_write ## sz((c)->mem, (a) + (b),			\
+		htobe ## sz(scpu_get_reg(c, ridx)));			\
 	if(ret == 0)							\
-		ret = memory_write ## sz((m),				\
-				*(a) + *(b) + ((sz) >> 3),		\
-				htobe ## sz(*(c + 1)));			\
+		ret = memory_write ## sz((c)->mem,			\
+				(a) + (b) + ((sz) >> 3),		\
+				htobe ## sz(scpu_get_reg(c, ridx + 1)));\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADU(sz, m, a, b, c, ret) do {		\
-	ret = memory_read ## sz(m, *(a) + *(b), (void *)(c));		\
-	*(c) = be ## sz ## toh(*(c));					\
+#define ISN_EXEC_OP3_MEM_LOADU(sz, c, a, b, ridx, ret) do {		\
+	uint ## sz ##_t __r;						\
+	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
+	scpu_set_reg(c, ridx, be ## sz ## toh(__r));			\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADS(sz, m, a, b, c, ret) do {		\
-	ret = memory_read ## sz(m, *(a) + *(b), (void *)(c));		\
-	*(c) = sign_ext(be ## sz ## toh(*(c)), sz - 1);			\
+#define ISN_EXEC_OP3_MEM_LOADS(sz, c, a, b, ridx, ret) do {		\
+	uint ## sz ##_t __r;						\
+	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
+	scpu_set_reg(c, ridx, sign_ext(be ## sz ## toh(__r), sz - 1));	\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADD(sz, m, a, b, c, ret) do {		\
-	ret = memory_read ## sz(m, *(a) + *(b), (void *)(c));		\
+#define ISN_EXEC_OP3_MEM_LOADD(sz, c, a, b, ridx, ret) do {		\
+	uint ## sz ##_t __r, __r2;					\
+	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
 	if(ret == 0) {							\
-		ret = memory_read ## sz((m), *(a) + *(b) + ((sz) >> 3),	\
-				(void *)(c + 1));			\
-		*(c) = be ## sz ## toh(*(c));				\
-		*(c + 1) = be ## sz ## toh(*(c + 1));			\
+		ret = memory_read ## sz((c)->mem,			\
+				(a) + (b) + ((sz) >> 3),		\
+				(void *)(&__r2));			\
+		scpu_set_reg(c, ridx, be ## sz ## toh(__r));		\
+		scpu_set_reg(c, ridx + 1, be ## sz ## toh(__r2));	\
 	}								\
 } while(0);
 
@@ -289,25 +288,23 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 	{								\
 		struct sparc_ifmt_op3_imm const *__isn =		\
 				to_ifmt(op3_imm, isn);			\
-		sreg *__rd, *__rs1;					\
+		sreg __rs1;						\
 									\
-		__rd = scpu_get_reg(cpu, __isn->rd);			\
 		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, cpu->mem, __rs1,		\
-				&__isn->imm, __rd, ret);		\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1, __isn->imm,	\
+				__isn->rd, ret);			\
 		break;							\
 	}								\
 	case SIF_OP3_REG:						\
 	{								\
 		struct sparc_ifmt_op3_reg const *__isn =		\
 				to_ifmt(op3_reg, isn);			\
-		sreg *__rd, *__rs1, *__rs2;				\
+		sreg __rs1, __rs2;					\
 									\
-		__rd = scpu_get_reg(cpu, __isn->rd);			\
 		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
 		__rs2 = scpu_get_reg(cpu, __isn->rs2);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, cpu->mem, __rs1, __rs2,	\
-				__rd, ret);				\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1, __rs2,		\
+				__isn->rd, ret);			\
 		break;							\
 	}								\
 	default:							\
@@ -419,24 +416,22 @@ DEFINE_ISN_EXEC_Bicc(BVS);
 /* Template for window register instruction that uses immediate */
 #define ISN_EXEC_WIN_IMM(c, i, o) do {					\
 	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
-	sreg *__rd, *__rs1;						\
+	sreg __rs1;							\
 									\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
 	o(c);								\
-	__rd = scpu_get_reg(c, __isn->rd);				\
-	*__rd = *__rs1 + __isn->imm;					\
+	scpu_set_reg(c, __isn->rd, __rs1 + __isn->imm);			\
 } while(0)
 
 /* Template for window register instruction that uses register */
 #define ISN_EXEC_WIN_REG(c, i, o) do {					\
 	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
-	sreg *__rd, *__rs1, *__rs2;					\
+	sreg __rs1, __rs2;						\
 									\
 	__rs1 = scpu_get_reg(c, __isn->rs1);				\
 	__rs2 = scpu_get_reg(c, __isn->rs2);				\
 	o(c);								\
-	__rd = scpu_get_reg(c, __isn->rd);				\
-	*__rd = *__rs1 + *__rs2;					\
+	scpu_set_reg(c, __isn->rd, __rs1 + __rs2);			\
 } while(0)
 
 /* Template for window register instruction */

@@ -23,6 +23,7 @@ test add
 test addcc
 test sub
 test subcc
+test g0
 test stb
 test sth
 test st

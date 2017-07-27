@@ -5,7 +5,8 @@
 
 typedef uint32_t sreg;
 
-sreg *scpu_get_reg(struct cpu *cpu, off_t ridx);
+sreg scpu_get_reg(struct cpu *cpu, off_t ridx);
+void scpu_set_reg(struct cpu *cpu, off_t ridx, sreg val);
 
 uint8_t scpu_get_cc_n(struct cpu *cpu);
 void scpu_set_cc_n(struct cpu *cpu, uint8_t val);

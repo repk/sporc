@@ -19,8 +19,12 @@ struct sparc_registers {
 	/* pc[0] is pc, pc[1] is npc and pc[2] is filled by branche isn */
 	sreg pc[3];
 
-	/* generic registers (%g[0-7], %i[0-7], %o[0-7], %l[0-7]) */
-	sreg r[8 * (16 * SPARC_NRWIN + 16)];
+	/*
+	 * general purpose registers (%g[1-7], %i[0-7], %o[0-7], %l[0-7])
+	 * (%g0 is a special always null register, thus do not need to be stored
+	 * in this array)
+	 */
+	sreg r[7 + (16 * SPARC_NRWIN + 16)];
 };
 
 #define PSR_ICC_OFF_N (23)
@@ -50,20 +54,43 @@ struct sparc_cpu {
 #define to_sparc_cpu(c) (container_of(c, struct sparc_cpu, cpu))
 
 /**
- * Get a register from its opcode index
+ * Get a generic register from its opcode index
  *
  * @param cpu: cpu to fetch register from
  * @param ridx: register index
- * @return: A pointer to the register index
+ * @return: Register value
  */
-sreg *scpu_get_reg(struct cpu *cpu, off_t ridx)
+sreg scpu_get_reg(struct cpu *cpu, off_t ridx)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
-	if(ridx < 8)
-		return &scpu->reg.r[ridx];
+	if(ridx == 0 || ridx >= 32)
+		return 0;
 
-	return &scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx];
+	if(ridx < 8)
+		return scpu->reg.r[ridx - 1];
+
+	return scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx - 1];
+}
+
+/**
+ * Set a generic register from its opcode index
+ *
+ * @param cpu: cpu to fetch register from
+ * @param ridx: register index
+ * @param val: Value to set the register to
+ */
+void scpu_set_reg(struct cpu *cpu, off_t ridx, sreg val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	if(ridx == 0 || ridx >= 32)
+		return;
+
+	if(ridx < 8)
+		scpu->reg.r[ridx - 1] = val;
+	else
+		scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx - 1] = val;
 }
 
 /**

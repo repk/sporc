@@ -1,6 +1,5 @@
 TODO list not sorted:
 
-- Do not modify %g0
 - Add trap implementations
 - Add remaining instructions
 - Initialize registers correctly
