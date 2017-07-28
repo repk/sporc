@@ -1,0 +1,14 @@
+language: c
+
+before_install:
+  - sudo mkdir -p /opt/
+  - wget http://newos.org/toolchains/sparc-elf-4.9.1-Linux-x86_64.tar.xz
+  - sudo tar --no-same-owner -xf ./sparc-elf-4.9.1-Linux-x86_64.tar.xz -C /opt/
+
+script:
+  - export PATH=/opt/sparc-elf-4.9.1-Linux-x86_64/bin/:${PATH}
+  - export CROSS=sparc-elf-
+  - export TESTS=1
+  - make clean
+  - make -j4
+  - ./out/tests/tests.sh
