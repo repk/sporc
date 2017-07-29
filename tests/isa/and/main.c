@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 	reg = test_cpu_get_reg(c, 1);
 	if(reg != 0x00000eef) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 
@@ -67,6 +68,7 @@ int main(int argc, char **argv)
 	reg = test_cpu_get_reg(c, 1);
 	if(reg != 0xdeadb000) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 

@@ -61,24 +61,28 @@ int main(int argc, char **argv)
 	reg = test_cpu_get_reg(c, 1);
 	if(reg != 0xdeadbeef) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 
 	reg = test_cpu_get_reg(c, 2);
 	if(reg != 0x00000004) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 
 	reg = test_cpu_get_reg(c, 4);
 	if(reg != 0x00000028) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 
 	reg = test_cpu_get_reg(c, 5);
 	if(reg != 0xb16b00b5) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 

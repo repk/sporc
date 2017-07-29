@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 	mem = test_cpu_get_mem32(c, 0x10);
 	if(mem != htobe32(0xdeadbeef)) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", mem);
+		ret = -1;
 		goto close;
 	}
 

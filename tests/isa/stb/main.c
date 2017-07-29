@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 	mem = test_cpu_get_mem8(c, 0x10);
 	if(mem != 0xc) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", mem);
+		ret = -1;
 		goto close;
 	}
 

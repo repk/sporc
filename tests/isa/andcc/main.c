@@ -47,26 +47,31 @@ int main(int argc, char **argv)
 	reg = test_cpu_get_reg(c, 1);
 	if(reg != 0x8000caca) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_n(c);
 	if(icc != 1) {
 		fprintf(stderr, "Wrong icc n value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_z(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc z value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_v(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc v value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_c(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc c value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 
@@ -98,26 +103,31 @@ int main(int argc, char **argv)
 	reg = test_cpu_get_reg(c, 1);
 	if(reg != 0x00000000) {
 		fprintf(stderr, "Wrong register value after exec 0x%x\n", reg);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_n(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc n value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_z(c);
 	if(icc != 1) {
 		fprintf(stderr, "Wrong icc z value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_v(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc v value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	icc = test_cpu_get_cc_c(c);
 	if(icc != 0) {
 		fprintf(stderr, "Wrong icc c value after exec (%d)\n", icc);
+		ret = -1;
 		goto close;
 	}
 	printf("[OK]\n");
