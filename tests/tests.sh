@@ -1,9 +1,13 @@
 #!/bin/sh
 
 RES=""
+ERR=0
 
 test() {
 	RES="${RES} Test ${2}:\t\t $($(dirname ${0})/${1}/t-${2} 2>&1)\n"
+	if [ ${?} -ne 0 ]; then
+		ERR=1
+	fi
 }
 
 test isa sethi
@@ -55,3 +59,7 @@ test isa bvs
 test isa save-restore
 
 printf "${RES}" | column -t
+
+if [ ${ERR} -eq 1 ]; then
+	exit 255
+fi
