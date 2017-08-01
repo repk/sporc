@@ -1,12 +1,12 @@
 SECTIONS {
 	.rodata.memory : {
 		__memory_start = .;
-		*(.rodata.memory)
+		KEEP(*(.rodata.memory))
 		__memory_end = .;
 	}
 	.rodata.cpu : {
 		__cpu_start = .;
-		*(.rodata.cpu)
+		KEEP(*(.rodata.cpu))
 		__cpu_end = .;
 	}
 }
