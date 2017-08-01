@@ -199,14 +199,15 @@ endef
 
 define cross-target-rule
 ifneq ($(_$(1)_COBJ) $(_$(1)_AOBJ) $(_$(1)_DEP_OBJ),)
-$(2).elf: $(_$(1)_COBJ) $(_$(1)_AOBJ)
+$(2).elf: $(_$(1)_COBJ) $(_$(1)_AOBJ) $(_$(1)_DEP_OBJ)
 	@mkdir -p $$(dir $$@)
 	$$(CROSSCC) -o $$@ $$^ $$(CROSSLDFLAGS) $$(_$(1)_LDFLAGS)
 
 $(2): $(2).elf
 	$$(CROSSOBJCOPY) -O binary $$< $$@
 
-$(2)-clean: $(_$(1)_COBJ:%=%-clean) $(_$(1)_AOBJ:%=%-clean)
+$(2)-clean: $(_$(1)_COBJ:%=%-clean) $(_$(1)_AOBJ:%=%-clean) \
+		$(_$(1)_DEP_OBJ:%=%-clean)
 	$(call rm-file,$$(@:%-clean=%.elf))
 	$(call rm-file,$$(@:%-clean=%))
 	$(call rm-dir,$$(dir $$@))
