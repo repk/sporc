@@ -267,35 +267,43 @@ static struct memory *fmem_create(char const *file)
 	struct filemem *fm = NULL;
 	struct memory *ret = NULL;
 	struct stat st;
-	int err, flag, fd;
-	uint8_t perm = 0;
+	size_t i;
+	int err, flag, fd = -1;
+	static uint8_t const perm[] = {
+		MP_R | MP_W,
+		MP_W,
+		MP_R,
+	};
 
-	/* Try to mmap file with more permissive rights possible (R|W) */
-	err = access(file, R_OK);
-	if(err == 0)
-		perm |= MP_R;
+	/* Try to open file with the most permissive rigths possible (R|W) */
+	for(i = 0; i < ARRAY_SIZE(perm); ++i) {
+		/* Get POSIX permission flag */
+		flag = fmem_perm_flag(perm[i]);
+		if(flag < 0) {
+			ERR("Invalid perm 0x%x\n", perm[i]);
+			goto exit;
+		}
 
-	err = access(file, W_OK);
-	if(err == 0)
-		perm |= MP_W;
+		fd = open(file, flag);
+		if((fd < 0) && (errno != EACCES)) {
+			PERR("Cannot open %s", file);
+			goto exit;
+		}
 
-	/* Find file size */
-	err = stat(file, &st);
-	if(err != 0) {
-		PERR("Cannot stat %s\n", file);
-		goto exit;
+		/* open succeed */
+		if(fd >= 0)
+			break;
 	}
-
-	/* Get POSIX permission flag */
-	flag = fmem_perm_flag(perm);
-	if(flag < 0) {
-		ERR("Invalid perm 0x%x\n", perm);
-		goto exit;
-	}
-
-	fd = open(file, flag);
 	if(fd < 0) {
 		PERR("Cannot open %s", file);
+		goto exit;
+	}
+
+	/* Find file size */
+	err = fstat(fd, &st);
+	if(err != 0) {
+		PERR("Cannot stat %s\n", file);
+		close(fd);
 		goto exit;
 	}
 
@@ -306,7 +314,7 @@ static struct memory *fmem_create(char const *file)
 	}
 
 	fm->fd = fd;
-	fm->perm = perm;
+	fm->perm = perm[i];
 	fm->size = st.st_size;
 	ret = &fm->mem;
 
