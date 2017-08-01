@@ -13,7 +13,7 @@
 static struct memory_desc const *memory_desc_get(char const *name)
 {
 	struct memory_desc const * const *m;
-	struct memory_desc const *ret;
+	struct memory_desc const *ret = NULL;
 	extern struct memory_desc const *__memory_start;
 	extern struct memory_desc const *__memory_end;
 
