@@ -1,9 +1,26 @@
 language: c
 
+env:
+  global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+    - secure: "uwyrXXXRfpIqLOVckGWKmx41HMvWvpYmyatVciU1fMhfi91SEjEEXsygOnD1I7WKfn8mBG6vnpfPc4HGAPwEom704lLXI9n+X4wnUneeDE74ytT1OHRgtjvrU7OJx0pG1Q9XuQZ1bgdRXn9m426GlPt3zbDfOTf7Hep+aCWfcLoZIU/OcU8qr7eOQC4p5FMloFmsu6iQq21PNgwbpWwVJfgM/gFCEBknYjheoiE7+Q1KQkgsjYzxravhgDGrf4TYJkWLiZgQ04BLtB4oIeNHBFF/dtw6FjBLQ747BnMLPfof+ogt9EY5mQv0p6kobRfAj0tXEYEewnYXFEKZPzpvJY7lO5wjRSYz292OMJTe4KiGHHIIsl3r7FR3IssrqB1jReIwqPtHBbu+bGfJsupfIUKS/VvsTZgA+m/CUEzSzRWfRR9p7kp74lAn8uzqroDFkG3rhc2FeeQx64oIUbVGi9HoshIqni4JTpGLZMWXGvyRjOP6yS+gmRIdGoBSbAVeFgOfQH3SV/CUqzJEX+27HNi6tsCfBRuesujOu8BynIGTxyqhVG4uNnANlVLSfZ2plUFKYk5iQ+Fo30IsX9DPpWWp6oM2J+pUSSUrRM7x10cYIUxZZNTBmaO9wSgeRbCIQT8biP249sFUxrYKfmaplv00DVVD2xApxtRTszZ5y0I="
+
 before_install:
   - sudo mkdir -p /opt/
   - wget http://newos.org/toolchains/sparc-elf-4.9.1-Linux-x86_64.tar.xz
   - sudo tar --no-same-owner -xf ./sparc-elf-4.9.1-Linux-x86_64.tar.xz -C /opt/
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+addons:
+  coverity_scan:
+    project:
+      name: "repk/sporc"
+      description: "Build submitted via Travis CI"
+    notification_email: repk@triplefau.lt
+    build_command_prepend: "make clean"
+    build_command: "make -j4 out/sporc"
+    branch_pattern: master
 
 script:
   - export PATH=/opt/sparc-elf-4.9.1-Linux-x86_64/bin/:${PATH}
