@@ -10,7 +10,7 @@
  */
 static struct cpu_desc const *cpu_desc_get(char const *name)
 {
-	struct cpu_desc const **c, *ret;
+	struct cpu_desc const **c, *ret = NULL;
 	extern struct cpu_desc const *__cpu_start;
 	extern struct cpu_desc const *__cpu_end;
 
