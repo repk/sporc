@@ -15,6 +15,8 @@ enum sisn_fmt {
 	SIF_OP2_BICC,
 	SIF_OP3_REG,
 	SIF_OP3_IMM,
+	SIF_OP3_ICC_REG,
+	SIF_OP3_ICC_IMM,
 	SIF_OP3_FLOAT,
 };
 
@@ -67,6 +69,7 @@ enum sid_isn {
 	SI_BVS,
 	SI_SAVE,
 	SI_RESTORE,
+	SI_TA,
 };
 
 struct sparc_isn {
@@ -104,6 +107,18 @@ struct sparc_ifmt_op3_imm {
 	struct sparc_isn isn;
 	uint32_t imm;
 	uint8_t rd;
+	uint8_t rs1;
+};
+
+struct sparc_ifmt_op3_icc_reg {
+	struct sparc_isn isn;
+	uint8_t rs1;
+	uint8_t rs2;
+};
+
+struct sparc_ifmt_op3_icc_imm {
+	struct sparc_isn isn;
+	uint32_t imm;
 	uint8_t rs1;
 };
 

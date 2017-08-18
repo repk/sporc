@@ -468,6 +468,62 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 DEFINE_ISN_EXEC_WIN(SAVE);
 DEFINE_ISN_EXEC_WIN(RESTORE);
 
+/* ---------------- Trap isn execution ------------------*/
+/* Template for trap instruction that uses immediate */
+#define ISN_EXEC_Ticc_IMM(c, i, o) do {					\
+	struct sparc_ifmt_op3_icc_imm const *__isn =			\
+		to_ifmt(op3_icc_imm, i);				\
+	sreg __rs1;							\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	scpu_trap(c, 128 + ((__rs1 + __isn->imm)  & (0x7f)));		\
+} while(0)
+
+/* Template for trap instruction that uses register */
+#define ISN_EXEC_Ticc_REG(c, i, o) do {					\
+	struct sparc_ifmt_op3_icc_reg const *__isn =			\
+		to_ifmt(op3_icc_reg, i);				\
+	sreg __rs1, __rs2;						\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	__rs2 = scpu_get_reg(c, __isn->rs2);				\
+	scpu_trap(c, 128 + ((__rs1 + __rs2) & (0x7f)));			\
+} while(0)
+
+/* Template for trap instruction */
+#define ISN_EXEC_Ticc(n, op)						\
+static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
+{									\
+	int ret = 0;							\
+									\
+	if(!op(cpu))							\
+		return ret;						\
+									\
+	switch(isn->fmt) {						\
+	case SIF_OP3_ICC_IMM:						\
+		ISN_EXEC_Ticc_IMM(cpu, isn, op);			\
+		break;							\
+	case SIF_OP3_ICC_REG:						\
+		ISN_EXEC_Ticc_REG(cpu, isn, op);			\
+		break;							\
+	default:							\
+		ret = -1;						\
+		break;							\
+	}								\
+									\
+	return ret;							\
+}
+
+#define DEFINE_ISN_EXEC_Ticc(op)					\
+	ISN_EXEC_Ticc(op, ISN_OP_ ## op)
+
+#define ISN_EXEC_ENTRY_Ticc(op)						\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
+
+#define ISN_OP_TA(c) (1)
+
+/* Define all Ticc instructions handlers */
+DEFINE_ISN_EXEC_Ticc(TA);
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
@@ -513,6 +569,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_Bicc(BVS),
 	ISN_EXEC_ENTRY_WIN(SAVE),
 	ISN_EXEC_ENTRY_WIN(RESTORE),
+	ISN_EXEC_ENTRY_Ticc(TA),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)

@@ -111,11 +111,14 @@ static int isn_decode_op2(struct sparc_isn *isn)
 	return _decode_op2[flag](isn);
 }
 
+#define OP3_ICC (SI_TA) /* Temporary set Ticc instruction to ta */
+#define ISN_OP3_I(o) ((isn->op >> 13) & 0x1)
 #define ISN_OP3_RD(o) (((o) >> 25) & 0x1f)
 #define ISN_OP3_RS1(o) (((o) >> 14) & 0x1f)
 #define ISN_OP3_IMM(o) sign_ext(o & 0x1fff, 12)
 #define ISN_OP3_ASI(o) (((o) >> 5) & 0xff)
 #define ISN_OP3_RS2(o) ((o) & 0x1f)
+#define ISN_OP3_ICC(o) (((o) >> 25) & 0xf)
 
 /**
  * Decode a type 3 instruction that uses immediate
@@ -148,12 +151,64 @@ static int isn_decode_op3_int_reg(struct sparc_isn *isn)
 	return 0;
 }
 
+/** * Decode a type 3 Ticc instruction that uses immediate
+ */
+static int isn_decode_op3_int_icc_imm(struct sparc_isn *isn)
+{
+	struct sparc_ifmt_op3_icc_imm *i = to_ifmt(op3_icc_imm, isn);
+
+	i->isn.fmt = SIF_OP3_ICC_IMM;
+	i->rs1 = ISN_OP3_RS1(isn->op);
+	i->imm = ISN_OP3_IMM(isn->op);
+
+	return 0;
+}
+
+/**
+ * Decode a type 3 Ticc instruction that uses register
+ */
+static int isn_decode_op3_int_icc_reg(struct sparc_isn *isn)
+{
+	struct sparc_ifmt_op3_icc_reg *i = to_ifmt(op3_icc_reg, isn);
+
+	i->isn.fmt = SIF_OP3_ICC_REG;
+	i->rs1 = ISN_OP3_RS1(isn->op);
+	i->rs2 = ISN_OP3_RS2(isn->op);
+
+	return 0;
+}
+
+/**
+ * Decode a Ticc instruction
+ */
+static int isn_decode_op3_icc(struct sparc_isn *isn)
+{
+	static enum sid_isn const _isn_op3_icc[] = {
+		[8] = SI_TA,
+	};
+	int ret;
+	uint8_t cond;
+
+	cond = ISN_OP3_ICC(isn->op);
+	if((cond >= ARRAY_SIZE(_isn_op3_icc)) || (_isn_op3_icc[cond] == 0))
+		return -1;
+
+	isn->id = _isn_op3_icc[cond];
+	if(ISN_OP3_I(isn->op))
+		ret = isn_decode_op3_int_icc_imm(isn);
+	else
+		ret = isn_decode_op3_int_icc_reg(isn);
+
+	return ret;
+}
+
 struct _op3_isn_type {
 	enum sid_isn id;
 	uint8_t isfloat;
 };
 #define _OP3_ISN_INT(o, i) [o] = { .id = i, }
 #define _OP3_ISN_FLOAT(o, i) [o] = { .id = i, .isfloat = 1, }
+#define _OP3_ISN_ICC(o) [o] = { .id = OP3_ICC, }
 
 /**
  * Common code for type 3 instruction decoding, splitted in float, immediate and
@@ -171,9 +226,11 @@ static inline int isn_decode_op3(struct sparc_isn *isn,
 
 	isn->id = it[flag].id;
 
-	if(it[flag].isfloat)
+	if(isn->id == OP3_ICC)
+		ret = isn_decode_op3_icc(isn);
+	else if(it[flag].isfloat)
 		ret = -1; /* TODO handle float */
-	else if(isn->op & (1 << 13))
+	else if(ISN_OP3_I(isn->op))
 		ret = isn_decode_op3_int_imm(isn);
 	else
 		ret = isn_decode_op3_int_reg(isn);
@@ -204,6 +261,7 @@ static int isn_decode_op3_2(struct sparc_isn *isn)
 		_OP3_ISN_INT(56, SI_JMPL),
 		_OP3_ISN_INT(60, SI_SAVE),
 		_OP3_ISN_INT(61, SI_RESTORE),
+		_OP3_ISN_ICC(58), /* Ticc */
 	};
 
 	return isn_decode_op3(isn, _isn_op3_2, ARRAY_SIZE(_isn_op3_2));

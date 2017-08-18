@@ -57,6 +57,7 @@ test isa bneg
 test isa bvc
 test isa bvs
 test isa save-restore
+test isa ta
 
 printf "${RES}" | column -t
 
