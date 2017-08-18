@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "sparc.h"
 #include "isn.h"
+#include "trap.h"
 
 #define SPARC_NRWIN 32
 
@@ -37,6 +38,20 @@ struct sparc_registers {
 		(((v) & 0x1)  << (PSR_ICC_OFF_ ## n))))
 #define PSR_CWP(sr) ((sr)->psr & 0x1f)
 #define PSR_SET_CWP(sr, v) ((sr)->psr = ((sr)->psr & ~(0x1f)) | ((v) & 0x1f))
+#define PSR_ET(sr) (((sr)->psr >> 5) & 0x1)
+#define PSR_SET_ET(sr, v)						\
+	((sr)->psr = ((sr)->psr & ~(1 << 5)) | (((v) & 0x1) << 5))
+#define PSR_PS(sr) (((sr)->psr >> 6) & 0x1)
+#define PSR_SET_PS(sr, v)						\
+	((sr)->psr = ((sr)->psr & ~(1 << 6)) | (((v) & 0x1) << 6))
+#define PSR_S(sr) (((sr)->psr >> 7) & 0x1)
+#define PSR_SET_S(sr, v)						\
+	((sr)->psr = ((sr)->psr & ~(1 << 7)) | (((v) & 0x1) << 7))
+
+#define TBR_TT(sr) (((sr)->tbr >> 4) & 0xff)
+#define TBR_SET_TT(sr, v)						\
+	((sr)->tbr = ((sr)->tbr & ~(0xff0)) | (((v) & 0xff) << 4))
+
 #define _SREG_IDX(sr, idx) (((idx) < 8) ? (idx) :			\
 		(8 + (idx) + PSR_CWP(sr) * 16))
 #define SREG(sr) ((sr)->r[_SREG_IDX(sr, idx)])
@@ -47,6 +62,7 @@ struct sparc_cpu {
 	/* Cpu instruction pipeline */
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
+	struct trap_queue tq;
 	/* Annul next instruction flag */
 	uint8_t annul;
 };
@@ -91,6 +107,19 @@ void scpu_set_reg(struct cpu *cpu, off_t ridx, sreg val)
 		scpu->reg.r[ridx - 1] = val;
 	else
 		scpu->reg.r[PSR_CWP(&scpu->reg) * 16 + ridx - 1] = val;
+}
+
+/**
+ * Set cpu trap flag (without perm checking)
+ *
+ * @param cpu: current cpu
+ * @param tn: trap number
+ */
+static void scpu_tflag_set(struct cpu *cpu, uint8_t tn)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	tq_raise(&scpu->tq, tn);
 }
 
 /**
@@ -252,17 +281,51 @@ void scpu_annul_delay_slot(struct cpu *cpu)
  * Enter a new register window
  *
  * @param cpu: current cpu
+ * @param check: set to 1 if check for window overflow is needed
  */
-void scpu_window_save(struct cpu *cpu)
+static inline void _scpu_window_save(struct cpu *cpu, int check)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	uint8_t cwp = PSR_CWP(&scpu->reg);
 
 	cwp = ((uint8_t)(cwp - 1)) % SPARC_NRWIN;
 
+	if((check) && (scpu->reg.wim & (1 << cwp))) {
+		scpu_tflag_set(cpu, ST_WOVERFLOW);
+		return;
+	}
+
+	PSR_SET_CWP(&scpu->reg, cwp);
+}
+
+/**
+ * Enter a new register window
+ *
+ * @param cpu: current cpu
+ */
+void scpu_window_save(struct cpu *cpu)
+{
+	_scpu_window_save(cpu, 1);
+}
+
+/**
+ * Exit current register window
+ *
+ * @param cpu: current cpu
+ * @param check: set to 1 if check for window underflow is needed
+ */
+static inline void _scpu_window_restore(struct cpu *cpu, int check)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	uint8_t cwp = PSR_CWP(&scpu->reg);
+
+	cwp = (cwp + 1) % SPARC_NRWIN;
+
 	/* TODO Trap on window underflow */
-	if(scpu->reg.wim & (1 << cwp))
-		abort();
+	if((check) && (scpu->reg.wim & (1 << cwp))) {
+		scpu_tflag_set(cpu, ST_WUNDERFLOW);
+		return;
+	}
 
 	PSR_SET_CWP(&scpu->reg, cwp);
 }
@@ -274,16 +337,19 @@ void scpu_window_save(struct cpu *cpu)
  */
 void scpu_window_restore(struct cpu *cpu)
 {
-	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
-	uint8_t cwp = PSR_CWP(&scpu->reg);
+	_scpu_window_restore(cpu, 1);
+}
 
-	cwp = (cwp + 1) % SPARC_NRWIN;
-
-	/* TODO Trap on window underflow */
-	if(scpu->reg.wim & (1 << cwp))
-		abort();
-
-	PSR_SET_CWP(&scpu->reg, cwp);
+/**
+ * Set cpu trap flag (with perm checking)
+ *
+ * @param cpu: current cpu
+ * @param tn: trap number
+ */
+void scpu_trap(struct cpu *cpu, uint8_t tn)
+{
+	/* TODO check permission or trigger privileged trap */
+	scpu_tflag_set(cpu, tn);
 }
 
 static int scpu_fetch(struct cpu *cpu)
@@ -309,10 +375,45 @@ static int scpu_decode(struct cpu *cpu)
 	return isn_decode(&scpu->pipeline[0].isn);
 }
 
+/**
+ * Actually handle a trap
+ */
+static inline int _scpu_enter_trap(struct cpu *cpu, uint8_t tn)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* TODO check Reset trap and error mode ? */
+	/*
+	 * TODO Check ET,
+	 * In order to be able to test the trap mecanism, ET is not
+	 * checked yet.
+	 *
+	 * XXX use the following once wrpsr get implemented
+	 if(!PSR_ET(&scpu->reg))
+		abort();
+	 */
+	/* First set proper values for ET, PS and S */
+	PSR_SET_ET(&scpu->reg, 0);
+	PSR_SET_PS(&scpu->reg, PSR_S(&scpu->reg));
+	PSR_SET_S(&scpu->reg, 1);
+	/* Then get new register window (without checking for overflow) */
+	_scpu_window_save(cpu, 0);
+	/* Set %l1,%l2 to PC, nPC XXX what about annul bit ? (see pg 128) */
+	scpu_set_reg(cpu, 17, scpu->reg.pc[0]);
+	scpu_set_reg(cpu, 18, scpu->reg.pc[1]);
+	/* Set TT to proper value */
+	TBR_SET_TT(&scpu->reg, tn);
+	/* Finally, prepare to jump into trap vector */
+	scpu->reg.pc[1] = scpu->reg.tbr;
+	scpu->reg.pc[2] = scpu->reg.tbr + 4;
+	return scpu_fetch(cpu);
+}
+
 static int scpu_exec(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	int ret;
+	uint8_t tn;
 
 	ret = isn_exec(cpu, &scpu->pipeline[0].isn);
 	if(ret < 0)
@@ -326,6 +427,14 @@ static int scpu_exec(struct cpu *cpu)
 		if(ret < 0)
 			return ret;
 		scpu->annul = 0;
+	}
+
+	/* Handle any pending trap */
+	if(tq_pending(&scpu->tq, &tn)) {
+		ret = _scpu_enter_trap(cpu, tn);
+		if(ret != 0)
+			return ret;
+		tq_ack(&scpu->tq, tn);
 	}
 
 	/* Move the pipeline to the next instruction */
@@ -348,6 +457,9 @@ static int scpu_boot(struct cpu *cpu, uintptr_t addr)
 	scpu->reg.pc[0] = addr;
 	scpu->reg.pc[1] = addr + 4;
 	scpu->reg.pc[2] = addr + 8;
+
+	/* Simulate RST trap by enabling Supervisor bit */
+	PSR_SET_S(&scpu->reg, 1);
 
 	/* TODO initialize special registers */
 
