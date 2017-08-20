@@ -352,6 +352,9 @@ void scpu_trap(struct cpu *cpu, uint8_t tn)
 	scpu_tflag_set(cpu, tn);
 }
 
+/**
+ * Fetch next pipelined instruction
+ */
 static int scpu_fetch(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -369,6 +372,9 @@ exit:
 	return ret;
 }
 
+/**
+ * Decode current pipelined instruction
+ */
 static int scpu_decode(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -409,6 +415,9 @@ static inline int _scpu_enter_trap(struct cpu *cpu, uint8_t tn)
 	return scpu_fetch(cpu);
 }
 
+/**
+ * Execute current pipelined instruction
+ */
 static int scpu_exec(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -447,6 +456,9 @@ static int scpu_exec(struct cpu *cpu)
 	return 0;
 }
 
+/**
+ * Boot sparc cpu at specific address
+ */
 static int scpu_boot(struct cpu *cpu, uintptr_t addr)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
@@ -474,6 +486,9 @@ exit:
 	return ret;
 }
 
+/**
+ * Create a sparc cpu instance
+ */
 static struct cpu *scpu_create(char const *args)
 {
 	struct sparc_cpu *scpu;
@@ -486,6 +501,9 @@ static struct cpu *scpu_create(char const *args)
 	return &scpu->cpu;
 }
 
+/**
+ * Destroy a sparc cpu instance
+ */
 static void scpu_destroy(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);

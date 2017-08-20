@@ -6,3 +6,6 @@ TODO list not sorted:
 - Add configurable number of window
 - Support for ASI
 - Support for some IO (e.g. UART, ...)
+- Support for privileged/unprivileged instructions
+- Trap on unimplemented instruction
+- Support Error Mode
