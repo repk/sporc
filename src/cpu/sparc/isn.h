@@ -139,7 +139,7 @@ union sparc_isn_fill {
 	struct sparc_ifmt_op3_float op3_float;
 };
 
-#define to_ifmt(n, i) (container_of(i, struct sparc_ifmt_ ## n, i))
+#define to_ifmt(n, i) (container_of(i, struct sparc_ifmt_ ## n, isn))
 
 int isn_decode(struct sparc_isn *isn);
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn);
