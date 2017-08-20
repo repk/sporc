@@ -10,3 +10,4 @@ TODO list not sorted:
 - Support for privileged/unprivileged instructions
 - Trap on unimplemented instruction
 - Support Error Mode
+- Support Y and ASR registers

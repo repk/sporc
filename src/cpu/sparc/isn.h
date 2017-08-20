@@ -70,6 +70,8 @@ enum sid_isn {
 	SI_SAVE,
 	SI_RESTORE,
 	SI_TA,
+	SI_RDPSR,
+	SI_WRPSR,
 };
 
 struct sparc_isn {

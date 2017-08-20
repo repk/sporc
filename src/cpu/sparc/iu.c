@@ -524,6 +524,77 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 
 /* Define all Ticc instructions handlers */
 DEFINE_ISN_EXEC_Ticc(TA);
+
+/* ----------- Specific register instruction ----------- */
+/* Template for special register read instruction */
+#define ISN_EXEC_RD_SREG(n, op)						\
+static int isn_exec_rd_ ## n(struct cpu *cpu,				\
+		struct sparc_isn const *i)				\
+{									\
+	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
+	sreg reg;							\
+									\
+	if(i->fmt != SIF_OP3_REG)					\
+		return -1;						\
+									\
+	if(scpu_get_ ## op(cpu, &reg) == 0)				\
+		scpu_set_reg(cpu, __isn->rd, reg);			\
+									\
+	return 0;							\
+}
+
+/* Template for specific register write instruction that uses immediate */
+#define ISN_EXEC_WR_SREG_IMM(c, i, o) do {				\
+	struct sparc_ifmt_op3_imm const *__isn = to_ifmt(op3_imm, i);	\
+	sreg __rs1;							\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	scpu_set_ ## o(c, __rs1 ^ __isn->imm);				\
+} while(0)
+
+/* Template for window register instruction that uses register */
+#define ISN_EXEC_WR_SREG_REG(c, i, o) do {				\
+	struct sparc_ifmt_op3_reg const *__isn = to_ifmt(op3_reg, i);	\
+	sreg __rs1, __rs2;						\
+									\
+	__rs1 = scpu_get_reg(c, __isn->rs1);				\
+	__rs2 = scpu_get_reg(c, __isn->rs2);				\
+	scpu_set_ ## o(c, __rs1 ^ __rs2);				\
+} while(0)
+
+/* Template for special register write instruction */
+#define ISN_EXEC_WR_SREG(n, op)						\
+static int isn_exec_wr_ ## n(struct cpu *cpu,				\
+		struct sparc_isn const *i)				\
+{									\
+	int ret = 0;							\
+									\
+	switch(i->fmt) {						\
+	case SIF_OP3_IMM:						\
+		ISN_EXEC_WR_SREG_IMM(cpu, i, op);			\
+		break;							\
+	case SIF_OP3_REG:						\
+		ISN_EXEC_WR_SREG_REG(cpu, i, op);			\
+		break;							\
+	default:							\
+		ret = -1;						\
+		break;							\
+	}								\
+									\
+	return ret;							\
+}
+
+#define DEFINE_ISN_EXEC_SREG(n, op)					\
+	ISN_EXEC_WR_SREG(n, op)						\
+	ISN_EXEC_RD_SREG(n, op)
+
+#define ISN_EXEC_ENTRY_SREG(op)						\
+	ISN_EXEC_ENTRY(SI_RD ## op, isn_exec_rd_ ## op),		\
+	ISN_EXEC_ENTRY(SI_WR ## op, isn_exec_wr_ ## op)
+
+/* Define all specific register instructions handlers */
+DEFINE_ISN_EXEC_SREG(PSR, psr);
+
 /* -------------- Instruction execution ---------------- */
 
 #define ISN_EXEC_ENTRY(i, f) [i] = f
@@ -570,6 +641,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_WIN(SAVE),
 	ISN_EXEC_ENTRY_WIN(RESTORE),
 	ISN_EXEC_ENTRY_Ticc(TA),
+	ISN_EXEC_ENTRY_SREG(PSR),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)
