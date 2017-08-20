@@ -19,6 +19,13 @@ void scpu_set_cc_c(struct cpu *cpu, uint8_t val);
 
 sreg scpu_get_pc(struct cpu *cpu);
 sreg scpu_get_npc(struct cpu *cpu);
+int scpu_get_psr(struct cpu *cpu, sreg *val);
+int scpu_set_psr(struct cpu *cpu, sreg val);
+int scpu_get_wim(struct cpu *cpu, sreg *val);
+int scpu_set_wim(struct cpu *cpu, sreg val);
+int scpu_get_tbr(struct cpu *cpu, sreg *val);
+int scpu_set_tbr(struct cpu *cpu, sreg val);
+
 void scpu_delay_jmp(struct cpu *cpu, uint32_t addr);
 void scpu_annul_delay_slot(struct cpu *cpu);
 void scpu_window_save(struct cpu *cpu);

@@ -123,6 +123,157 @@ static void scpu_tflag_set(struct cpu *cpu, uint8_t tn)
 }
 
 /**
+ * Fetch the specific PSR register
+ *
+ * @param cpu: cpu to fetch PSR from
+ * @param val: Register read value
+ * @return: Register 0 on read success, -1 otherwise
+ */
+int scpu_get_psr(struct cpu *cpu, sreg *val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* Privilege checking */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	/* EC and EF should be masked out */
+	*val = (scpu->reg.psr & ~(0x3 << 12));
+	return 0;
+}
+
+/**
+ * Write in specific PSR register
+ *
+ * @param cpu: cpu to write PSR from
+ * @param val: value to write PSR with
+ * @return: 0 on success, -1 otherwise
+ */
+int scpu_set_psr(struct cpu *cpu, sreg val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* Privilege checking */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	/* Check CWP */
+	if((val & 0x1f) >= SPARC_NRWIN) {
+		scpu_tflag_set(cpu, ST_ILL_ISN);
+		return -1;
+	}
+
+	/**
+	 * XXX It's not clear in the doc, if raising a window
+	 * overflow/underflow trap is needed regarding the new CWP value. It
+	 * seems to be ignored, it would be nice to double check this in real
+	 * world though.
+	 */
+
+	/* Impl, EC and EF should be ignored */
+	/* TODO hardwire version field ? */
+	val &= ~((0xf << 28) | (0x3 << 12));
+	scpu->reg.psr = val;
+	return 0;
+}
+
+/**
+ * Fetch the specific wim register
+ *
+ * @param cpu: cpu to fetch WIM from
+ * @param val: Register read value
+ * @return: Register 0 on read success, -1 otherwise
+ */
+int scpu_get_wim(struct cpu *cpu, sreg *val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* Privilege checking */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	/* Unimplemented windows read as 0 */
+	*val = (scpu->reg.wim & ~(0xffffffffULL << (SPARC_NRWIN + 1)));
+
+	return 0;
+}
+
+/**
+ * Write in specific WIM register
+ *
+ * @param cpu: cpu to write WIM from
+ * @param val: value to write WIM with
+ * @return: 0 on success, -1 otherwise
+ */
+int scpu_set_wim(struct cpu *cpu, sreg val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* Privilege checking */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	/* Unimplemented windows read as 0 */
+	val &= ~(0xffffffffULL << (SPARC_NRWIN + 1));
+	scpu->reg.wim = val;
+	return 0;
+}
+
+/**
+ * Fetch the specific tbr register
+ *
+ * @param cpu: cpu to fetch TBR from
+ * @param val: Register read value
+ * @return: Register 0 on read success, -1 otherwise
+ */
+int scpu_get_tbr(struct cpu *cpu, sreg *val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* Privilege checking */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	*val = scpu->reg.tbr;
+	return 0;
+}
+
+/**
+ * Write in specific tbr register
+ *
+ * @param cpu: cpu to write TBR from
+ * @param val: value to write TBR with
+ * @return: 0 on success, -1 otherwise
+ */
+int scpu_set_tbr(struct cpu *cpu, sreg val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* TODO Check supervisor mode */
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return -1;
+	}
+
+	/* TODO Check zero field for debuging purpose ? */
+
+	/* Only TBA is writable */
+	val &= (0xfffff << 12);
+	scpu->reg.tbr = val;
+	return 0;
+}
+
+/**
  * Get negative conditional code flag value
  *
  * @param cpu: cpu to get conditional code from
