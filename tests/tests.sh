@@ -62,6 +62,8 @@ test isa rdpsr
 test isa wrpsr
 test isa wrwim
 test isa rdwim
+test isa wrtbr
+test isa rdtbr
 
 printf "${RES}" | column -t
 
