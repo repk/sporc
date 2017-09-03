@@ -58,6 +58,7 @@ test isa bvc
 test isa bvs
 test isa save-restore
 test isa ta
+test isa tn
 test isa rdpsr
 test isa wrpsr
 test isa wrwim

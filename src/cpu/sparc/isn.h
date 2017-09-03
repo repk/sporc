@@ -70,6 +70,7 @@ enum sid_isn {
 	SI_SAVE,
 	SI_RESTORE,
 	SI_TA,
+	SI_TN,
 	SI_RDPSR,
 	SI_WRPSR,
 	SI_RDWIM,
