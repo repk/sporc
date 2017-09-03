@@ -72,6 +72,8 @@ enum sid_isn {
 	SI_TA,
 	SI_RDPSR,
 	SI_WRPSR,
+	SI_RDWIM,
+	SI_WRWIM,
 };
 
 struct sparc_isn {

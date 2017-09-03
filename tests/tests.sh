@@ -60,6 +60,8 @@ test isa save-restore
 test isa ta
 test isa rdpsr
 test isa wrpsr
+test isa wrwim
+test isa rdwim
 
 printf "${RES}" | column -t
 

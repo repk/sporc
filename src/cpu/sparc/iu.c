@@ -594,6 +594,7 @@ static int isn_exec_wr_ ## n(struct cpu *cpu,				\
 
 /* Define all specific register instructions handlers */
 DEFINE_ISN_EXEC_SREG(PSR, psr);
+DEFINE_ISN_EXEC_SREG(WIM, wim);
 
 /* -------------- Instruction execution ---------------- */
 
@@ -642,6 +643,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_WIN(RESTORE),
 	ISN_EXEC_ENTRY_Ticc(TA),
 	ISN_EXEC_ENTRY_SREG(PSR),
+	ISN_EXEC_ENTRY_SREG(WIM),
 };
 
 int isn_exec(struct cpu *cpu, struct sparc_isn const *isn)
