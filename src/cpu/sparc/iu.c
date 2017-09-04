@@ -534,6 +534,7 @@ DEFINE_ISN_EXEC_Ticc(L);
 DEFINE_ISN_EXEC_Ticc(GU);
 DEFINE_ISN_EXEC_Ticc(LEU);
 DEFINE_ISN_EXEC_Ticc(CC);
+DEFINE_ISN_EXEC_Ticc(CS);
 
 /* ----------- Specific register instruction ----------- */
 /* Template for special register read instruction */
@@ -663,6 +664,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_Ticc(GU),
 	ISN_EXEC_ENTRY_Ticc(LEU),
 	ISN_EXEC_ENTRY_Ticc(CC),
+	ISN_EXEC_ENTRY_Ticc(CS),
 	ISN_EXEC_ENTRY_SREG(PSR),
 	ISN_EXEC_ENTRY_SREG(WIM),
 	ISN_EXEC_ENTRY_SREG(TBR),
