@@ -186,6 +186,12 @@ DEFINE_ISN_EXEC_LOGICAL(XNOR)
 #define ISN_EXEC_ENTRY_SHIFT(op)					\
 	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
 
+/* Shift instruction operation callbacks */
+#define ISN_OP_SLL(a, b) (((uint32_t)(a)) << ((b) & 0x1f))
+
+/* Define all shift instruction handlers */
+DEFINE_ISN_EXEC_SHIFT(SLL);
+
 /* --------------- Arithmetic instruction ----------------- */
 #define DEFINE_ISN_EXEC_ARITHMETIC(op)					\
 	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)			\
@@ -634,6 +640,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_LOGICAL(ORN),
 	ISN_EXEC_ENTRY_LOGICAL(XOR),
 	ISN_EXEC_ENTRY_LOGICAL(XNOR),
+	ISN_EXEC_ENTRY_SHIFT(SLL),
 	ISN_EXEC_ENTRY_ARITHMETIC(ADD),
 	ISN_EXEC_ENTRY_ARITHMETIC(SUB),
 	ISN_EXEC_ENTRY_MEM(LDSB),

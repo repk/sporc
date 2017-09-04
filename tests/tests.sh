@@ -23,6 +23,7 @@ test isa xor
 test isa xorcc
 test isa xnor
 test isa xnorcc
+test isa sll
 test isa add
 test isa addcc
 test isa sub
