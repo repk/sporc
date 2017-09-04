@@ -60,6 +60,7 @@ test isa save-restore
 test isa ta
 test isa tn
 test isa tne
+test isa te
 test isa rdpsr
 test isa wrpsr
 test isa wrwim

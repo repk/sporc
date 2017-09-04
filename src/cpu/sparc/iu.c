@@ -523,11 +523,13 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 #define ISN_OP_TA(c) (1)
 #define ISN_OP_TN(c) (0)
 #define ISN_OP_TNE(c) (!scpu_get_cc_z(c))
+#define ISN_OP_TE(c) (scpu_get_cc_z(c))
 
 /* Define all Ticc instructions handlers */
 DEFINE_ISN_EXEC_Ticc(TA);
 DEFINE_ISN_EXEC_Ticc(TN);
 DEFINE_ISN_EXEC_Ticc(TNE);
+DEFINE_ISN_EXEC_Ticc(TE);
 
 /* ----------- Specific register instruction ----------- */
 /* Template for special register read instruction */
@@ -649,6 +651,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_Ticc(TA),
 	ISN_EXEC_ENTRY_Ticc(TN),
 	ISN_EXEC_ENTRY_Ticc(TNE),
+	ISN_EXEC_ENTRY_Ticc(TE),
 	ISN_EXEC_ENTRY_SREG(PSR),
 	ISN_EXEC_ENTRY_SREG(WIM),
 	ISN_EXEC_ENTRY_SREG(TBR),
