@@ -70,6 +70,7 @@ test isa tleu
 test isa tcc
 test isa tcs
 test isa tpos
+test isa tneg
 test isa rdpsr
 test isa wrpsr
 test isa wrwim
