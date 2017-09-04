@@ -64,6 +64,7 @@ test isa te
 test isa tg
 test isa tle
 test isa tge
+test isa tl
 test isa rdpsr
 test isa wrpsr
 test isa wrwim
