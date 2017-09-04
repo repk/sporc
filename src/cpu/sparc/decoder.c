@@ -186,6 +186,7 @@ static int isn_decode_op3_icc(struct sparc_isn *isn)
 	static enum sid_isn const _isn_op3_icc[] = {
 		[8] = SI_TA,
 		[0] = SI_TN,
+		[9] = SI_TNE,
 	};
 	int ret;
 	uint8_t cond;
