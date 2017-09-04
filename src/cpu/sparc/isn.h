@@ -75,6 +75,7 @@ enum sid_isn {
 	SI_TE,
 	SI_TG,
 	SI_TLE,
+	SI_TGE,
 	SI_RDPSR,
 	SI_WRPSR,
 	SI_RDWIM,
