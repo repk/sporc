@@ -330,6 +330,27 @@ DEFINE_ISN_EXEC_MEM(LDUH, LOADU, 16)
 DEFINE_ISN_EXEC_MEM(LD, LOADU, 32)
 DEFINE_ISN_EXEC_MEM(LDD, LOADD, 32) /* Double memory_read32 */
 
+/* --------- Condition code flags test macros ---------- */
+
+#define ISN_ICC_OP_A(c) (1)
+#define ISN_ICC_OP_N(c) (0)
+#define ISN_ICC_OP_NE(c) (!scpu_get_cc_z(c))
+#define ISN_ICC_OP_E(c) (scpu_get_cc_z(c))
+#define ISN_ICC_OP_G(c)							\
+	(!(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c))))
+#define ISN_ICC_OP_LE(c)							\
+	(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c)))
+#define ISN_ICC_OP_GE(c) (!(scpu_get_cc_n(c) ^ scpu_get_cc_v(c)))
+#define ISN_ICC_OP_L(c) (scpu_get_cc_n(c) ^ scpu_get_cc_v(c))
+#define ISN_ICC_OP_GU(c) (!(scpu_get_cc_c(c) || scpu_get_cc_z(c)))
+#define ISN_ICC_OP_LEU(c) (scpu_get_cc_c(c) || scpu_get_cc_z(c))
+#define ISN_ICC_OP_CC(c) (!scpu_get_cc_c(c))
+#define ISN_ICC_OP_CS(c) (scpu_get_cc_c(c))
+#define ISN_ICC_OP_POS(c) (!scpu_get_cc_n(c))
+#define ISN_ICC_OP_NEG(c) (scpu_get_cc_n(c))
+#define ISN_ICC_OP_VC(c) (!scpu_get_cc_v(c))
+#define ISN_ICC_OP_VS(c) (scpu_get_cc_v(c))
+
 /* --------------- Bicc instructions ------------------- */
 
 static int isn_exec_bn(struct cpu *cpu, struct sparc_isn const *isn)
@@ -356,12 +377,13 @@ static int isn_exec_ba(struct cpu *cpu, struct sparc_isn const *isn)
 
 /* Define a branch instruction handler template */
 #define DEFINE_ISN_EXEC_Bicc(n)						\
-static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
+static int								\
+isn_exec_B ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 {									\
 	struct sparc_ifmt_op2_bicc const *i = to_ifmt(op2_bicc, isn);	\
 	sreg pc;							\
 									\
-	if(!ISN_OP_ ## n(cpu)) {					\
+	if(!ISN_ICC_OP_ ## n(cpu)) {					\
 		if(i->a)						\
 			scpu_annul_delay_slot(cpu);			\
 		return 0;						\
@@ -372,44 +394,23 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 }
 
 #define ISN_EXEC_ENTRY_Bicc(n)						\
-	ISN_EXEC_ENTRY(SI_ ## n, isn_exec_ ## n)
-
-/* 
- * Define all branches instruction callbacks that tests the proper conditional
- * code flags
- */
-#define ISN_OP_BNE(c) (!scpu_get_cc_z(c))
-#define ISN_OP_BE(c) (scpu_get_cc_z(c))
-#define ISN_OP_BG(c)							\
-	(!(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c))))
-#define ISN_OP_BLE(c)							\
-	(scpu_get_cc_z(c) || (scpu_get_cc_n(c) ^ scpu_get_cc_v(c)))
-#define ISN_OP_BGE(c) (!(scpu_get_cc_n(c) ^ scpu_get_cc_v(c)))
-#define ISN_OP_BL(c) (scpu_get_cc_n(c) ^ scpu_get_cc_v(c))
-#define ISN_OP_BGU(c) (!(scpu_get_cc_c(c) || scpu_get_cc_z(c)))
-#define ISN_OP_BLEU(c) (scpu_get_cc_c(c) || scpu_get_cc_z(c))
-#define ISN_OP_BCC(c) (!scpu_get_cc_c(c))
-#define ISN_OP_BCS(c) (scpu_get_cc_c(c))
-#define ISN_OP_BPOS(c) (!scpu_get_cc_n(c))
-#define ISN_OP_BNEG(c) (scpu_get_cc_n(c))
-#define ISN_OP_BVC(c) (!scpu_get_cc_v(c))
-#define ISN_OP_BVS(c) (scpu_get_cc_v(c))
+	ISN_EXEC_ENTRY(SI_B ## n, isn_exec_B ## n)
 
 /* Branches instruction handler definition */
-DEFINE_ISN_EXEC_Bicc(BNE);
-DEFINE_ISN_EXEC_Bicc(BE);
-DEFINE_ISN_EXEC_Bicc(BG);
-DEFINE_ISN_EXEC_Bicc(BLE);
-DEFINE_ISN_EXEC_Bicc(BGE);
-DEFINE_ISN_EXEC_Bicc(BL);
-DEFINE_ISN_EXEC_Bicc(BGU);
-DEFINE_ISN_EXEC_Bicc(BLEU);
-DEFINE_ISN_EXEC_Bicc(BCC);
-DEFINE_ISN_EXEC_Bicc(BCS);
-DEFINE_ISN_EXEC_Bicc(BPOS);
-DEFINE_ISN_EXEC_Bicc(BNEG);
-DEFINE_ISN_EXEC_Bicc(BVC);
-DEFINE_ISN_EXEC_Bicc(BVS);
+DEFINE_ISN_EXEC_Bicc(NE);
+DEFINE_ISN_EXEC_Bicc(E);
+DEFINE_ISN_EXEC_Bicc(G);
+DEFINE_ISN_EXEC_Bicc(LE);
+DEFINE_ISN_EXEC_Bicc(GE);
+DEFINE_ISN_EXEC_Bicc(L);
+DEFINE_ISN_EXEC_Bicc(GU);
+DEFINE_ISN_EXEC_Bicc(LEU);
+DEFINE_ISN_EXEC_Bicc(CC);
+DEFINE_ISN_EXEC_Bicc(CS);
+DEFINE_ISN_EXEC_Bicc(POS);
+DEFINE_ISN_EXEC_Bicc(NEG);
+DEFINE_ISN_EXEC_Bicc(VC);
+DEFINE_ISN_EXEC_Bicc(VS);
 
 /* ---------- Window isn (save/restore) execution ------------ */
 
@@ -492,7 +493,8 @@ DEFINE_ISN_EXEC_WIN(RESTORE);
 
 /* Template for trap instruction */
 #define ISN_EXEC_Ticc(n, op)						\
-static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
+static int								\
+isn_exec_T ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 {									\
 	int ret = 0;							\
 									\
@@ -515,21 +517,16 @@ static int isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)	\
 }
 
 #define DEFINE_ISN_EXEC_Ticc(op)					\
-	ISN_EXEC_Ticc(op, ISN_OP_ ## op)
+	ISN_EXEC_Ticc(op, ISN_ICC_OP_ ## op)
 
 #define ISN_EXEC_ENTRY_Ticc(op)						\
-	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
-
-#define ISN_OP_TA(c) (1)
-#define ISN_OP_TN(c) (0)
-#define ISN_OP_TNE(c) (!scpu_get_cc_z(c))
-#define ISN_OP_TE(c) (scpu_get_cc_z(c))
+	ISN_EXEC_ENTRY(SI_T ## op, isn_exec_T ## op)
 
 /* Define all Ticc instructions handlers */
-DEFINE_ISN_EXEC_Ticc(TA);
-DEFINE_ISN_EXEC_Ticc(TN);
-DEFINE_ISN_EXEC_Ticc(TNE);
-DEFINE_ISN_EXEC_Ticc(TE);
+DEFINE_ISN_EXEC_Ticc(A);
+DEFINE_ISN_EXEC_Ticc(N);
+DEFINE_ISN_EXEC_Ticc(NE);
+DEFINE_ISN_EXEC_Ticc(E);
 
 /* ----------- Specific register instruction ----------- */
 /* Template for special register read instruction */
@@ -632,26 +629,26 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_MEM(STD),
 	ISN_EXEC_ENTRY(SI_BN, isn_exec_bn),
 	ISN_EXEC_ENTRY(SI_BA, isn_exec_ba),
-	ISN_EXEC_ENTRY_Bicc(BNE),
-	ISN_EXEC_ENTRY_Bicc(BE),
-	ISN_EXEC_ENTRY_Bicc(BG),
-	ISN_EXEC_ENTRY_Bicc(BLE),
-	ISN_EXEC_ENTRY_Bicc(BGE),
-	ISN_EXEC_ENTRY_Bicc(BL),
-	ISN_EXEC_ENTRY_Bicc(BGU),
-	ISN_EXEC_ENTRY_Bicc(BLEU),
-	ISN_EXEC_ENTRY_Bicc(BCC),
-	ISN_EXEC_ENTRY_Bicc(BCS),
-	ISN_EXEC_ENTRY_Bicc(BPOS),
-	ISN_EXEC_ENTRY_Bicc(BNEG),
-	ISN_EXEC_ENTRY_Bicc(BVC),
-	ISN_EXEC_ENTRY_Bicc(BVS),
+	ISN_EXEC_ENTRY_Bicc(NE),
+	ISN_EXEC_ENTRY_Bicc(E),
+	ISN_EXEC_ENTRY_Bicc(G),
+	ISN_EXEC_ENTRY_Bicc(LE),
+	ISN_EXEC_ENTRY_Bicc(GE),
+	ISN_EXEC_ENTRY_Bicc(L),
+	ISN_EXEC_ENTRY_Bicc(GU),
+	ISN_EXEC_ENTRY_Bicc(LEU),
+	ISN_EXEC_ENTRY_Bicc(CC),
+	ISN_EXEC_ENTRY_Bicc(CS),
+	ISN_EXEC_ENTRY_Bicc(POS),
+	ISN_EXEC_ENTRY_Bicc(NEG),
+	ISN_EXEC_ENTRY_Bicc(VC),
+	ISN_EXEC_ENTRY_Bicc(VS),
 	ISN_EXEC_ENTRY_WIN(SAVE),
 	ISN_EXEC_ENTRY_WIN(RESTORE),
-	ISN_EXEC_ENTRY_Ticc(TA),
-	ISN_EXEC_ENTRY_Ticc(TN),
-	ISN_EXEC_ENTRY_Ticc(TNE),
-	ISN_EXEC_ENTRY_Ticc(TE),
+	ISN_EXEC_ENTRY_Ticc(A),
+	ISN_EXEC_ENTRY_Ticc(N),
+	ISN_EXEC_ENTRY_Ticc(NE),
+	ISN_EXEC_ENTRY_Ticc(E),
 	ISN_EXEC_ENTRY_SREG(PSR),
 	ISN_EXEC_ENTRY_SREG(WIM),
 	ISN_EXEC_ENTRY_SREG(TBR),
