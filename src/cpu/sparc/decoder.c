@@ -196,6 +196,7 @@ static int isn_decode_op3_icc(struct sparc_isn *isn)
 		[4] = SI_TLEU,
 		[13] = SI_TCC,
 		[5] = SI_TCS,
+		[14] = SI_TPOS,
 	};
 	int ret;
 	uint8_t cond;
