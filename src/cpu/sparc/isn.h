@@ -84,6 +84,7 @@ enum sid_isn {
 	SI_TPOS,
 	SI_TNEG,
 	SI_TVC,
+	SI_TVS,
 	SI_RDPSR,
 	SI_WRPSR,
 	SI_RDWIM,
