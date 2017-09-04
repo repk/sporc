@@ -179,6 +179,13 @@ DEFINE_ISN_EXEC_LOGICAL(ANDN)
 DEFINE_ISN_EXEC_LOGICAL(XOR)
 DEFINE_ISN_EXEC_LOGICAL(XNOR)
 
+/* Define shift instructions */
+#define DEFINE_ISN_EXEC_SHIFT(op)					\
+	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)
+
+#define ISN_EXEC_ENTRY_SHIFT(op)					\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
+
 /* --------------- Arithmetic instruction ----------------- */
 #define DEFINE_ISN_EXEC_ARITHMETIC(op)					\
 	ISN_EXEC_ALU(op, ISN_OP_ ## op, ISN_ALU_CC_NOP)			\
