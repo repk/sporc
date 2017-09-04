@@ -25,6 +25,7 @@ test isa xnor
 test isa xnorcc
 test isa sll
 test isa srl
+test isa sra
 test isa add
 test isa addcc
 test isa sub
