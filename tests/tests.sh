@@ -71,6 +71,7 @@ test isa tcc
 test isa tcs
 test isa tpos
 test isa tneg
+test isa tvc
 test isa rdpsr
 test isa wrpsr
 test isa wrwim
