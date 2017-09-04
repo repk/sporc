@@ -189,6 +189,7 @@ static int isn_decode_op3_icc(struct sparc_isn *isn)
 		[9] = SI_TNE,
 		[1] = SI_TE,
 		[10] = SI_TG,
+		[2] = SI_TLE,
 	};
 	int ret;
 	uint8_t cond;
