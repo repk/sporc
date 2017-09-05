@@ -59,6 +59,11 @@ trapjmp:
 	or %g0, %l1, %g2
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	or %g0, %g0, %g1
 	ta 4
 	/* Hopefully this is a deadspot */

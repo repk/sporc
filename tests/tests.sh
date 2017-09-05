@@ -60,6 +60,8 @@ test isa bneg
 test isa bvc
 test isa bvs
 test isa save-restore
+test isa rdpsr
+test isa wrpsr
 test isa ta
 test isa tn
 test isa tne
@@ -76,8 +78,6 @@ test isa tpos
 test isa tneg
 test isa tvc
 test isa tvs
-test isa rdpsr
-test isa wrpsr
 test isa wrwim
 test isa rdwim
 test isa wrtbr

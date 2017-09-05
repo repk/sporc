@@ -1,6 +1,11 @@
 .section .text, "ax", @progbits
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	sethi %hi(traptbl), %g1
 	wr %g1, %lo(traptbl), %tbr
 	or %g0, %g0, %g1

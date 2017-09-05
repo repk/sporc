@@ -64,6 +64,11 @@ trapjmp:
 	ba 1b
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	/* Do not trap (Test with overflow flag) */
 	sethi %hi(0x7fffffff), %g1
 	or %g1, %lo(0x7fffffff), %g1

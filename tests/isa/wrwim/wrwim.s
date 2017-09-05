@@ -27,6 +27,11 @@ wufjmp:
 	or %g1, %lo(0xdeadbeef), %g1
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	or %g0, 0, %g1 /* Clear g1 */
 	wr %g0, 4, %wim /* Make window 2 invalid */
 	nop; nop; nop;

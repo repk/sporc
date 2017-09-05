@@ -64,6 +64,11 @@ trapjmp:
 	ba 1b
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	/* Do not trap */
 	addcc %g0, 1, %g0
 	tleu 5

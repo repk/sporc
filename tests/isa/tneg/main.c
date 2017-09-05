@@ -28,6 +28,31 @@ int main(int argc, char **argv)
 	if(ret != 0)
 		goto close;
 
+	/* RDPSR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* WRPSR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* NOP */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* NOP */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* NOP */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
 	/* ADDCC */
 	ret = test_cpu_step(c);
 	if(ret != 0)

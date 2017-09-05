@@ -64,6 +64,11 @@ trapjmp:
 	ba 1b
 
 tmain:
+	/* Enable trap */
+	rd %psr, %g1
+	wr %g1, 0x20, %psr
+	nop; nop; nop
+
 	/* Do not trap */
 	sethi %hi(0x80000001), %g1
 	or %g1, %lo(0x80000001), %g1
