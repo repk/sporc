@@ -25,6 +25,7 @@ enum sid_isn {
 	SI_SETHI,
 	SI_CALL,
 	SI_JMPL,
+	SI_RETT,
 	SI_AND,
 	SI_ANDCC,
 	SI_ANDN,

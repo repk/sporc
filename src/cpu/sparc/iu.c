@@ -71,12 +71,57 @@ static int isn_exec_jmpl(struct cpu *cpu, struct sparc_isn const *isn)
 {
 	int ret = 0;
 
+	/* TODO see JMPL ASI when RETT is on delay slot (pg 126) */
 	switch(isn->fmt) {
 	case SIF_OP3_IMM:
 		isn_exec_jmpl_imm(cpu, isn);
 		break;
 	case SIF_OP3_REG:
 		isn_exec_jmpl_reg(cpu, isn);
+		break;
+	default:
+		ret = -1;
+		break;
+	}
+
+	return ret;
+}
+
+/* ---------------- RETT instruction Helpers ------------------ */
+
+static inline void isn_exec_rett_imm(struct cpu *cpu,
+		struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op3_imm const *i = to_ifmt(op3_imm, isn);
+	sreg rs1;
+
+	rs1 = scpu_get_reg(cpu, i->rs1);
+
+	scpu_exit_trap(cpu, rs1 + i->imm);
+}
+
+static inline void isn_exec_rett_reg(struct cpu *cpu,
+		struct sparc_isn const *isn)
+{
+	struct sparc_ifmt_op3_reg const *i = to_ifmt(op3_reg, isn);
+	sreg rs1, rs2;
+
+	rs1 = scpu_get_reg(cpu, i->rs1);
+	rs2 = scpu_get_reg(cpu, i->rs2);
+
+	scpu_exit_trap(cpu, rs1 + rs2);
+}
+
+static int isn_exec_rett(struct cpu *cpu, struct sparc_isn const *isn)
+{
+	int ret = 0;
+
+	switch(isn->fmt) {
+	case SIF_OP3_IMM:
+		isn_exec_rett_imm(cpu, isn);
+		break;
+	case SIF_OP3_REG:
+		isn_exec_rett_reg(cpu, isn);
 		break;
 	default:
 		ret = -1;
@@ -638,6 +683,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY(SI_SETHI, isn_exec_sethi),
 	ISN_EXEC_ENTRY(SI_CALL, isn_exec_call),
 	ISN_EXEC_ENTRY(SI_JMPL, isn_exec_jmpl),
+	ISN_EXEC_ENTRY(SI_RETT, isn_exec_rett),
 	ISN_EXEC_ENTRY_LOGICAL(AND),
 	ISN_EXEC_ENTRY_LOGICAL(ANDN),
 	ISN_EXEC_ENTRY_LOGICAL(OR),
