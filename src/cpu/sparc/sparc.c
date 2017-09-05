@@ -56,6 +56,11 @@ struct sparc_registers {
 		(8 + (idx) + PSR_CWP(sr) * 16))
 #define SREG(sr) ((sr)->r[_SREG_IDX(sr, idx)])
 
+enum scpu_mode {
+	SM_ERR,
+	SM_EXC,
+};
+
 #define SPARC_PIPESZ 2
 struct sparc_cpu {
 	struct cpu cpu;
@@ -63,11 +68,38 @@ struct sparc_cpu {
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
 	struct trap_queue tq;
+	enum scpu_mode mode;
 	/* Annul next instruction flag */
 	uint8_t annul;
 };
 
 #define to_sparc_cpu(c) (container_of(c, struct sparc_cpu, cpu))
+
+/**
+ * Change sparc cpu mode
+ *
+ * @param cpu: cpu to change the mode
+ * @param mode: new cpu mode
+ */
+static inline void scpu_set_mode(struct cpu *cpu, enum scpu_mode mode)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	scpu->mode = mode;
+}
+
+/**
+ * Is cpu in error mode
+ *
+ * @param cpu: cpu to check error mode
+ * @return: positive value if cpu is in error mode, 0 otherwise
+ */
+static inline int scpu_is_error_mode(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	return (scpu->mode == SM_ERR);
+}
 
 /**
  * Get a generic register from its opcode index
@@ -558,6 +590,9 @@ static int scpu_fetch(struct cpu *cpu)
 	uint32_t rd;
 	int ret = 0;
 
+	if(scpu_is_error_mode(cpu))
+		return -1;
+
 	sreg npc = scpu->reg.pc[1];
 	ret = memory_fetch_isn32(cpu->mem, npc, &rd);
 	if(ret != 0)
@@ -575,7 +610,42 @@ exit:
 static int scpu_decode(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	if(scpu_is_error_mode(cpu))
+		return -1;
+
 	return isn_decode(&scpu->pipeline[0].isn);
+}
+
+/**
+ * Boot sparc cpu at specific address
+ */
+static int scpu_boot(struct cpu *cpu, uintptr_t addr)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	uint32_t rd;
+	int ret;
+
+	/* Initialize PC registers */
+	scpu->reg.pc[0] = addr;
+	scpu->reg.pc[1] = addr + 4;
+	scpu->reg.pc[2] = addr + 8;
+
+	/* Simulate RST trap by enabling Supervisor bit */
+	PSR_SET_S(&scpu->reg, 1);
+
+	/* TODO initialize special registers */
+
+	/* Prefetch the first instruction */
+	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
+	if(ret != 0)
+		goto exit;
+
+	scpu->pipeline[0].isn.op = (opcode)be32toh(rd);
+
+	scpu_set_mode(cpu, SM_EXC);
+exit:
+	return ret;
 }
 
 /**
@@ -585,16 +655,19 @@ static inline int _scpu_enter_trap(struct cpu *cpu, uint8_t tn)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
-	/* TODO check Reset trap and error mode ? */
-	/*
-	 * TODO Check ET,
-	 * In order to be able to test the trap mecanism, ET is not
-	 * checked yet.
-	 *
-	 * XXX use the following once wrpsr get implemented
-	 if(!PSR_ET(&scpu->reg))
-		abort();
-	 */
+	/* Reset CPU on reset trap */
+	if(tn == 0) {
+		scpu_boot(cpu, 0);
+		return 0;
+	}
+
+	if(!PSR_ET(&scpu->reg) && !TRAP_IS_INT(tn)) {
+		scpu_set_mode(cpu, SM_ERR);
+		return 0;
+	} else if(!PSR_ET(&scpu->reg)) {
+		return 0;
+	}
+
 	/* First set proper values for ET, PS and S */
 	PSR_SET_ET(&scpu->reg, 0);
 	PSR_SET_PS(&scpu->reg, PSR_S(&scpu->reg));
@@ -620,6 +693,9 @@ static int scpu_exec(struct cpu *cpu)
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	int ret;
 	uint8_t tn;
+
+	if(scpu_is_error_mode(cpu))
+		return -1;
 
 	ret = isn_exec(cpu, &scpu->pipeline[0].isn);
 	if(ret < 0)
@@ -651,36 +727,6 @@ static int scpu_exec(struct cpu *cpu)
 	scpu->reg.pc[2] += 4;
 
 	return 0;
-}
-
-/**
- * Boot sparc cpu at specific address
- */
-static int scpu_boot(struct cpu *cpu, uintptr_t addr)
-{
-	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
-	uint32_t rd;
-	int ret;
-
-	/* Initialize PC registers */
-	scpu->reg.pc[0] = addr;
-	scpu->reg.pc[1] = addr + 4;
-	scpu->reg.pc[2] = addr + 8;
-
-	/* Simulate RST trap by enabling Supervisor bit */
-	PSR_SET_S(&scpu->reg, 1);
-
-	/* TODO initialize special registers */
-
-	/* Prefetch the first instruction */
-	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
-	if(ret != 0)
-		goto exit;
-
-	scpu->pipeline[0].isn.op = (opcode)be32toh(rd);
-
-exit:
-	return ret;
 }
 
 /**
