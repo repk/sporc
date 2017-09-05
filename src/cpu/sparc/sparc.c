@@ -433,8 +433,9 @@ void scpu_annul_delay_slot(struct cpu *cpu)
  *
  * @param cpu: current cpu
  * @param check: set to 1 if check for window overflow is needed
+ * @return: 0 on success -1 if a trap occured
  */
-static inline void _scpu_window_save(struct cpu *cpu, int check)
+static inline int _scpu_window_save(struct cpu *cpu, int check)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	uint8_t cwp = PSR_CWP(&scpu->reg);
@@ -443,16 +444,18 @@ static inline void _scpu_window_save(struct cpu *cpu, int check)
 
 	if((check) && (scpu->reg.wim & (1 << cwp))) {
 		scpu_tflag_set(cpu, ST_WOVERFLOW);
-		return;
+		return -1;
 	}
 
 	PSR_SET_CWP(&scpu->reg, cwp);
+	return 0;
 }
 
 /**
  * Enter a new register window
  *
  * @param cpu: current cpu
+ * @return: 0 on success -1 if a trap occured
  */
 void scpu_window_save(struct cpu *cpu)
 {
@@ -464,8 +467,9 @@ void scpu_window_save(struct cpu *cpu)
  *
  * @param cpu: current cpu
  * @param check: set to 1 if check for window underflow is needed
+ * @return: 0 on success -1 if a trap occured
  */
-static inline void _scpu_window_restore(struct cpu *cpu, int check)
+static inline int _scpu_window_restore(struct cpu *cpu, int check)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	uint8_t cwp = PSR_CWP(&scpu->reg);
@@ -475,16 +479,18 @@ static inline void _scpu_window_restore(struct cpu *cpu, int check)
 	/* TODO Trap on window underflow */
 	if((check) && (scpu->reg.wim & (1 << cwp))) {
 		scpu_tflag_set(cpu, ST_WUNDERFLOW);
-		return;
+		return -1;
 	}
 
 	PSR_SET_CWP(&scpu->reg, cwp);
+	return 0;
 }
 
 /**
  * Exit current register window
  *
  * @param cpu: current cpu
+ * @return: 0 on success -1 if a trap occured
  */
 void scpu_window_restore(struct cpu *cpu)
 {
@@ -501,6 +507,46 @@ void scpu_trap(struct cpu *cpu, uint8_t tn)
 {
 	/* TODO check permission or trigger privileged trap */
 	scpu_tflag_set(cpu, tn);
+}
+
+/**
+ * Exit current trap
+ *
+ * @param cpu: current cpu
+ * @param jmp: trap return jump address
+ */
+void scpu_exit_trap(struct cpu *cpu, uint32_t jmp)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	int ret;
+
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		return;
+	}
+
+	if(PSR_ET(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_ILL_ISN);
+		return;
+	}
+
+	ret = _scpu_window_restore(cpu, 1);
+	if(ret != 0)
+		return;
+
+	/* Instrutions are all 4 byte aligned */
+	if(jmp & 0x3) {
+		scpu_tflag_set(cpu, ST_MEM_UNALIGNED);
+		return;
+	}
+
+	scpu_delay_jmp(cpu, jmp);
+
+	/* TODO Change jmpl address space here ? */
+	/* XXX Add debug if previous instruction wasn't a jmpl ? */
+
+	PSR_SET_S(&scpu->reg, PSR_PS(&scpu->reg));
+	PSR_SET_ET(&scpu->reg, 1);
 }
 
 /**
