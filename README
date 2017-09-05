@@ -1,7 +1,7 @@
 sporc
 =====
 
-Sporc is a sparc simulator. The main goal for this was to get a basic overview
+Sporc is a sparc emulator. The main goal for this was to get a basic overview
 of sparc architecture.
 
 /!\ Not all instructions and features are implemented yet.
@@ -68,7 +68,7 @@ name, then the following variables could be set:
 rules.mk directory.
 
 TARGET is used to compile host objects, CROSSTARGET is used for compiling
-objects for the simulated target and BUNDLE is a fake target to group source
+objects for the emulated target and BUNDLE is a fake target to group source
 file together (likewise using static library but avoiding the fuss of building
 the archive and using --Wl,-whole-archive at link time).
 
