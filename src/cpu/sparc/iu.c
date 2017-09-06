@@ -51,6 +51,11 @@ static inline void isn_exec_jmpl_imm(struct cpu *cpu,
 
 	rs1 = scpu_get_reg(cpu, i->rs1);
 
+	if((rs1 + i->imm) & 0x3) {
+		scpu_trap(cpu, ST_MEM_UNALIGNED);
+		return;
+	}
+
 	scpu_set_reg(cpu, i->rd, scpu_get_pc(cpu));
 	scpu_delay_jmp(cpu, rs1 + i->imm);
 }
@@ -63,6 +68,11 @@ static inline void isn_exec_jmpl_reg(struct cpu *cpu,
 
 	rs1 = scpu_get_reg(cpu, i->rs1);
 	rs2 = scpu_get_reg(cpu, i->rs2);
+
+	if((rs1 + rs2) & 0x3) {
+		scpu_trap(cpu, ST_MEM_UNALIGNED);
+		return;
+	}
 
 	scpu_set_reg(cpu, i->rd, scpu_get_pc(cpu));
 	scpu_delay_jmp(cpu, rs1 + rs2);
