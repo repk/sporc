@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "sparc.h"
 #include "isn.h"
+#include "trap.h"
 
 /* ----------------- sethi instruction Helpers ------------------- */
 
@@ -296,42 +297,83 @@ DEFINE_ISN_EXEC_ARITHMETIC(SUB)
 #define be8toh(a) (a) /* Kludge */
 #define htobe8(a) (a) /* Kludge */
 
-#define ISN_EXEC_OP3_MEM_STORE(sz, c, a, b, ridx, ret) do {		\
-	ret = memory_write ## sz((c)->mem, (a) + (b),			\
+/* Check address is aligned on a power of two bit size */
+#define MEM_ALIGN(a, s) (((a) & (((s) >> 3) - 1)) == 0)
+
+#define ISN_EXEC_OP3_MEM_STORE(sz, c, a, ridx) do {			\
+	int __ret;							\
+	__ret = memory_write ## sz((c)->mem, a,				\
 			htobe ## sz(scpu_get_reg(c, ridx)));		\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_STORED(sz, c, a, b, ridx, ret) do {		\
-	ret = memory_write ## sz((c)->mem, (a) + (b),			\
-		htobe ## sz(scpu_get_reg(c, ridx)));			\
-	if(ret == 0)							\
-		ret = memory_write ## sz((c)->mem,			\
-				(a) + (b) + ((sz) >> 3),		\
-				htobe ## sz(scpu_get_reg(c, ridx + 1)));\
+#define ISN_EXEC_OP3_MEM_STORED(sz, c, a, ridx) do {			\
+	int __ret;							\
+	/* rd should be even */						\
+	if((ridx) & 0x1) {						\
+		scpu_trap(c, ST_ILL_ISN);				\
+		break;							\
+	}								\
+	__ret = memory_write ## sz((c)->mem, a,				\
+			htobe ## sz(scpu_get_reg(c, ridx)));		\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
+	__ret = memory_write ## sz((c)->mem, (a) + ((sz) >> 3),		\
+			htobe ## sz(scpu_get_reg(c, ridx + 1)));	\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADU(sz, c, a, b, ridx, ret) do {		\
+#define ISN_EXEC_OP3_MEM_LOADU(sz, c, a, ridx) do {			\
+	int __ret;							\
 	uint ## sz ##_t __r;						\
-	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
+	__ret = memory_read ## sz((c)->mem, a, (void *)(&__r));		\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
 	scpu_set_reg(c, ridx, be ## sz ## toh(__r));			\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADS(sz, c, a, b, ridx, ret) do {		\
+#define ISN_EXEC_OP3_MEM_LOADS(sz, c, a, ridx) do {			\
+	int __ret;							\
 	uint ## sz ##_t __r;						\
-	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
+	__ret = memory_read ## sz((c)->mem, a, (void *)(&__r));		\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
 	scpu_set_reg(c, ridx, sign_ext(be ## sz ## toh(__r), sz - 1));	\
 } while(0);
 
-#define ISN_EXEC_OP3_MEM_LOADD(sz, c, a, b, ridx, ret) do {		\
+#define ISN_EXEC_OP3_MEM_LOADD(sz, c, a, ridx) do {			\
+	int __ret;							\
 	uint ## sz ##_t __r, __r2;					\
-	ret = memory_read ## sz((c)->mem, (a) + (b), (void *)(&__r));	\
-	if(ret == 0) {							\
-		ret = memory_read ## sz((c)->mem,			\
-				(a) + (b) + ((sz) >> 3),		\
-				(void *)(&__r2));			\
-		scpu_set_reg(c, ridx, be ## sz ## toh(__r));		\
-		scpu_set_reg(c, ridx + 1, be ## sz ## toh(__r2));	\
+	/* rd should be even */						\
+	if((ridx) & 0x1) {						\
+		scpu_trap(c, ST_ILL_ISN);				\
+		break;							\
 	}								\
+	__ret = memory_read ## sz((c)->mem, a, (void *)(&__r));		\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
+	__ret = memory_read ## sz((c)->mem, (a) + ((sz) >> 3),		\
+			(void *)(&__r2));				\
+	if(__ret != 0) {						\
+		scpu_trap(c, ST_DACCESS_EXCEP);				\
+		break;							\
+	}								\
+	scpu_set_reg(c, ridx, be ## sz ## toh(__r));			\
+	scpu_set_reg(c, ridx + 1, be ## sz ## toh(__r2));		\
 } while(0);
 
 /**
@@ -353,8 +395,12 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 		sreg __rs1;						\
 									\
 		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1, __isn->imm,	\
-				__isn->rd, ret);			\
+		if(!MEM_ALIGN(__rs1 + __isn->imm, sz)) {		\
+			scpu_trap(cpu, ST_MEM_UNALIGNED);		\
+			break;						\
+		}							\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1 + __isn->imm,	\
+				__isn->rd);				\
 		break;							\
 	}								\
 	case SIF_OP3_REG:						\
@@ -365,8 +411,12 @@ isn_exec_ ## n(struct cpu *cpu, struct sparc_isn const *isn)		\
 									\
 		__rs1 = scpu_get_reg(cpu, __isn->rs1);			\
 		__rs2 = scpu_get_reg(cpu, __isn->rs2);			\
-		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1, __rs2,		\
-				__isn->rd, ret);			\
+		if(!MEM_ALIGN(__rs1 + __rs2, sz)) {			\
+			scpu_trap(cpu, ST_MEM_UNALIGNED);		\
+			break;						\
+		}							\
+		ISN_EXEC_OP3_MEM_ ## op(sz, cpu, __rs1 + __rs2,		\
+				__isn->rd);				\
 		break;							\
 	}								\
 	default:							\
