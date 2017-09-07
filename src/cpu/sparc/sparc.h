@@ -25,6 +25,8 @@ int scpu_get_wim(struct cpu *cpu, sreg *val);
 int scpu_set_wim(struct cpu *cpu, sreg val);
 int scpu_get_tbr(struct cpu *cpu, sreg *val);
 int scpu_set_tbr(struct cpu *cpu, sreg val);
+int scpu_get_asr(struct cpu *cpu, uint8_t asr, sreg *val);
+int scpu_set_asr(struct cpu *cpu, uint8_t asr, sreg v1, sreg v2);
 
 void scpu_delay_jmp(struct cpu *cpu, uint32_t addr);
 void scpu_annul_delay_slot(struct cpu *cpu);

@@ -306,6 +306,51 @@ int scpu_set_tbr(struct cpu *cpu, sreg val)
 }
 
 /**
+ * Fetch the specific ASR register
+ *
+ * @param cpu: cpu to fetch ASR from
+ * @param asr: ASR number
+ * @param val: Register read value
+ * @return: Register 0 on read success, -1 otherwise
+ */
+int scpu_get_asr(struct cpu *cpu, uint8_t asr, sreg *val)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* RDY */
+	if(asr == 0)
+		*val = scpu->reg.y;
+	else if (asr > 15 && asr < 31)
+		scpu_tflag_set(cpu, ST_ILL_ISN);
+
+	return 0;
+}
+
+/**
+ * Write in specific ASR register. This functions takes two values because some
+ * ASR stores the xor result of these values some are implementation
+ * dependent.
+ *
+ * @param cpu: cpu to write ASR from
+ * @param asr: ASR number
+ * @param v1: First value to write ASR with
+ * @param v2: Second value to write ASR with
+ * @return: 0 on success, -1 otherwise
+ */
+int scpu_set_asr(struct cpu *cpu, uint8_t asr, sreg v1, sreg v2)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	/* RDY */
+	if(asr == 0)
+		scpu->reg.y = v1 ^ v2;
+	else if (asr > 15 && asr < 31)
+		scpu_tflag_set(cpu, ST_ILL_ISN);
+
+	return 0;
+}
+
+/**
  * Get negative conditional code flag value
  *
  * @param cpu: cpu to get conditional code from
