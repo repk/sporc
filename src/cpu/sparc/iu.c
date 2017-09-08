@@ -302,6 +302,76 @@ DEFINE_ISN_EXEC_SHIFT(SRA);
 DEFINE_ISN_EXEC_ARITHMETIC(ADD)
 DEFINE_ISN_EXEC_ARITHMETIC(SUB)
 
+/* ---------------- Multiply instruction ------------------ */
+
+#define ISN_EXEC_MUL_REG(c, isn, op) do					\
+{									\
+	struct sparc_ifmt_op3_reg const *__i = to_ifmt(op3_reg, isn);	\
+	sreg __rs1, __rs2, __rd;					\
+									\
+	__rs1 = scpu_get_reg(c, __i->rs1);				\
+	__rs2 = scpu_get_reg(c, __i->rs2);				\
+	ISN_OP_ ## op(c, __rd, __rs1, __rs2);				\
+	scpu_set_reg(c, __i->rd, __rd);					\
+} while(0)
+
+#define ISN_EXEC_MUL_IMM(c, isn, op) do					\
+{									\
+	struct sparc_ifmt_op3_imm const *__i = to_ifmt(op3_imm, isn);	\
+	sreg __rd, __rs1;						\
+									\
+	__rs1 = scpu_get_reg(c, __i->rs1);				\
+	ISN_OP_ ## op(c, __rd, __rs1, __i->imm);			\
+	scpu_set_reg(c, __i->rd, __rd);					\
+} while(0)
+
+#define ISN_EXEC_MUL(op)						\
+static int isn_exec_ ## op(struct cpu *c, struct sparc_isn const *i)	\
+{									\
+	int ret = 0;							\
+									\
+	switch((i)->fmt) {						\
+	case SIF_OP3_IMM:						\
+		ISN_EXEC_MUL_IMM(c, i, op);				\
+		break;							\
+	case SIF_OP3_REG:						\
+		ISN_EXEC_MUL_REG(c, i, op);				\
+		break;							\
+	default:							\
+		ret = -1;						\
+		break;							\
+	}								\
+									\
+	return ret;							\
+}
+#define ISN_EXEC_ENTRY_MUL(op)						\
+	ISN_EXEC_ENTRY(SI_ ## op, isn_exec_ ## op)
+
+#define ISN_OP_MULSCC(c, rd, rs1, rsi) do				\
+{									\
+	sreg __y;							\
+	uint32_t __tmp = (((uint32_t)(rs1)) >> 1) |			\
+		((scpu_get_cc_v(c) ^ scpu_get_cc_n(c)) << 31);		\
+									\
+	/* Step add */							\
+	scpu_get_asr(c, 0, &__y);					\
+	if(__y & 0x1) {							\
+		__rd = ISN_OP_ADD(__tmp, rsi);				\
+		ISN_ALU_CC_ADD(c, __tmp, rsi, rd);			\
+	} else {							\
+		rd = ISN_OP_ADD(__tmp, 0);				\
+		ISN_ALU_CC_ADD(c, __tmp, 0, rd);			\
+	}								\
+									\
+	/* Update y register */						\
+	__y = (((uint32_t)(__y)) >> 1) |				\
+		(((uint32_t)((rs1) & 0x1)) << 31);			\
+	scpu_set_asr(c, 0, __y, 0);					\
+} while(0)
+
+/* Define a multiply / divide instruction */
+ISN_EXEC_MUL(MULSCC);
+
 /* ----------------- Memory instruction ------------------- */
 
 #define be8toh(a) (a) /* Kludge */
@@ -769,6 +839,7 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_SHIFT(SRA),
 	ISN_EXEC_ENTRY_ARITHMETIC(ADD),
 	ISN_EXEC_ENTRY_ARITHMETIC(SUB),
+	ISN_EXEC_ENTRY_MUL(MULSCC),
 	ISN_EXEC_ENTRY_MEM(LDSB),
 	ISN_EXEC_ENTRY_MEM(LDSH),
 	ISN_EXEC_ENTRY_MEM(LDUB),
