@@ -32,6 +32,13 @@ uint32_t test_cpu_get_reg(struct cpu *cpu, off_t ridx)
 	return scpu_get_reg(cpu, ridx);
 }
 
+uint32_t test_cpu_get_y(struct cpu *cpu)
+{
+	uint32_t y;
+	scpu_get_asr(cpu, 0, &y);
+	return y;
+}
+
 uint32_t test_cpu_get_pc(struct cpu *cpu)
 {
 	return scpu_get_pc(cpu);
