@@ -385,10 +385,28 @@ static int isn_exec_ ## op(struct cpu *c, struct sparc_isn const *i)	\
 	scpu_set_cc_c(c, 0);						\
 } while(0)
 
+#define ISN_OP_SMUL(c, rd, rs1, rsi) do					\
+{									\
+	int64_t __res = ((int64_t)((int32_t)(rs1))) *			\
+			((int32_t)(rsi));				\
+	rd = __res & 0xffffffff;					\
+	scpu_set_asr(c, 0, __res >> 32, 0);				\
+} while(0)
+
+#define ISN_OP_SMULCC(c, rd, rs1, rsi) do				\
+{									\
+	ISN_OP_SMUL(c, rd, rs1, rsi);					\
+	ISN_ALU_CC_NZ(c, rs1, rsi, rd);					\
+	scpu_set_cc_v(c, 0);						\
+	scpu_set_cc_c(c, 0);						\
+} while(0)
+
 /* Define a multiply / divide instruction */
 ISN_EXEC_MUL(MULSCC);
 ISN_EXEC_MUL(UMUL);
 ISN_EXEC_MUL(UMULCC);
+ISN_EXEC_MUL(SMUL);
+ISN_EXEC_MUL(SMULCC);
 
 /* ----------------- Memory instruction ------------------- */
 
@@ -860,6 +878,8 @@ static int (* const _exec_isn[])(struct cpu *cpu, struct sparc_isn const *) = {
 	ISN_EXEC_ENTRY_MUL(MULSCC),
 	ISN_EXEC_ENTRY_MUL(UMUL),
 	ISN_EXEC_ENTRY_MUL(UMULCC),
+	ISN_EXEC_ENTRY_MUL(SMUL),
+	ISN_EXEC_ENTRY_MUL(SMULCC),
 	ISN_EXEC_ENTRY_MEM(LDSB),
 	ISN_EXEC_ENTRY_MEM(LDSH),
 	ISN_EXEC_ENTRY_MEM(LDUB),

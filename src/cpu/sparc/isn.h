@@ -48,6 +48,8 @@ enum sid_isn {
 	SI_MULSCC,
 	SI_UMUL,
 	SI_UMULCC,
+	SI_SMUL,
+	SI_SMULCC,
 	SI_LDSB,
 	SI_LDSH,
 	SI_LDUB,
