@@ -108,7 +108,7 @@ static inline int scpu_is_error_mode(struct cpu *cpu)
  * @param ridx: register index
  * @return: Register value
  */
-sreg scpu_get_reg(struct cpu *cpu, off_t ridx)
+sreg scpu_get_reg(struct cpu *cpu, sridx ridx)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
@@ -128,7 +128,7 @@ sreg scpu_get_reg(struct cpu *cpu, off_t ridx)
  * @param ridx: register index
  * @param val: Value to set the register to
  */
-void scpu_set_reg(struct cpu *cpu, off_t ridx, sreg val)
+void scpu_set_reg(struct cpu *cpu, sridx ridx, sreg val)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
