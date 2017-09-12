@@ -453,6 +453,18 @@ static int isn_alu_icc64_udiv(struct isn_handler const *hdl, struct cpu *cpu,
 	return 0;
 }
 
+static int isn_alu_icc64_sdiv(struct isn_handler const *hdl, struct cpu *cpu,
+		uint64_t res, uint32_t v1, uint32_t v2)
+{
+	(void)hdl;
+
+	isn_alu_icc_nz(hdl, cpu, (uint32_t)res, v1, v2);
+	scpu_set_cc_v(cpu, (((res >> 32) == 0) &&
+				((res >> 32) != 0xffffffff)) ? 0 : 1);
+	scpu_set_cc_c(cpu, 0);
+	return 0;
+}
+
 static int isn_exec_umul(struct isn_handler const *hdl, struct cpu *cpu,
 		sridx rd, uint32_t v1, uint32_t v2)
 {
@@ -505,6 +517,29 @@ static int isn_exec_udiv(struct isn_handler const *hdl, struct cpu *cpu,
 	return 0;
 }
 DEFINE_ISN_HDL_ALUcc64(UDIV, isn_exec_udiv, isn_alu_icc64_udiv);
+
+static int isn_exec_sdiv(struct isn_handler const *hdl, struct cpu *cpu,
+		sridx rd, uint32_t v1, uint32_t v2)
+{
+	struct isn_handler_alu *ah = to_handler_alu(hdl);
+	int64_t res, dividend;
+	uint32_t y;
+
+	scpu_get_asr(cpu, 0, &y);
+	dividend = (((uint64_t)y) << 32) | v1;
+
+	res = dividend / ((int32_t)v2);
+
+	if(ah->icc64)
+		ah->icc64(hdl, cpu, res, v1, v2);
+
+	if(((res >> 32) != 0) && ((res >> 32) != 0xffffffff))
+		res = (res > 0) ? 0x7fffffff : 0x80000000;
+
+	scpu_set_reg(cpu, rd, res & 0xffffffff);
+	return 0;
+}
+DEFINE_ISN_HDL_ALUcc64(SDIV, isn_exec_sdiv, isn_alu_icc64_sdiv);
 
 /* -------------- Memory instruction helpers ---------------- */
 
@@ -1123,6 +1158,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_ALUcc64_ENTRY(UMUL),
 	ISN_HDL_ALUcc64_ENTRY(SMUL),
 	ISN_HDL_ALUcc64_ENTRY(UDIV),
+	ISN_HDL_ALUcc64_ENTRY(SDIV),
 	ISN_HDL_MEM_ENTRY(LDSB),
 	ISN_HDL_MEM_ENTRY(LDSH),
 	ISN_HDL_MEM_ENTRY(LDUB),

@@ -1,0 +1,109 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <test-utils.h>
+#include <cpu.h>
+
+#define PROGFILE "../binaries/isa/sdiv.bin"
+#define KB 1024
+#define MEMSZ (250 * KB)
+
+int main(int argc, char **argv)
+{
+	struct cpu *c;
+	int ret = -1;
+	uint32_t r1;
+
+	c = test_cpu_open(argc, argv, PROGFILE, MEMSZ);
+	if(c == NULL)
+		goto exit;
+
+	/* SETHI */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* WRY */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* SETHI */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* OR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* SETHI */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* OR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* UDIV */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* SETHI */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* OR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* UDIV */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* OR */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	/* UDIV */
+	ret = test_cpu_step(c);
+	if(ret != 0)
+		goto close;
+
+	r1 = test_cpu_get_reg(c, 3);
+	if(r1 != 0xdeadbeef) {
+		fprintf(stderr, "Wrong register value after exec 0x%x\n", r1);
+		ret = -1;
+		goto close;
+	}
+
+	r1 = test_cpu_get_reg(c, 4);
+	if(r1 != 0x7fffffff) {
+		fprintf(stderr, "Wrong register value after exec 0x%x\n", r1);
+		ret = -1;
+		goto close;
+	}
+
+	r1 = test_cpu_get_reg(c, 5);
+	if(r1 != 0x80000000) {
+		fprintf(stderr, "Wrong register value after exec 0x%x\n", r1);
+		ret = -1;
+		goto close;
+	}
+
+	printf("[OK]\n");
+	ret = 0;
+
+close:
+	test_cpu_close(c);
+exit:
+	return ret;
+}
