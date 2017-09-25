@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 #include "memory.h"
 #include "sparc.h"
 #include "isn.h"

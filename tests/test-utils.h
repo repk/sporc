@@ -1,7 +1,7 @@
 #ifndef _TEST_UTILS_H_
 #define _TEST_UTILS_H_
 
-#include <cpu.h>
+#include "cpu/cpu.h"
 
 uint8_t test_cpu_get_cc_n(struct cpu *cpu);
 uint8_t test_cpu_get_cc_z(struct cpu *cpu);

@@ -1,7 +1,7 @@
 #ifndef _SPARC_H_
 #define _SPARC_H_
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 
 typedef uint32_t sreg;
 typedef uint8_t sridx;

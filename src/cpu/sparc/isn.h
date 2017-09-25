@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <endian.h>
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 
 typedef uint32_t opcode;
 

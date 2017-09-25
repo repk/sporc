@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 
 /**
  * Find a registered cpu plugin from its name.

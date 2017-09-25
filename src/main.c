@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cpu.h"
+#include "cpu/cpu.h"
 #include "memory.h"
 #include "utils.h"
 

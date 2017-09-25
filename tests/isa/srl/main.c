@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include <test-utils.h>
-#include <cpu.h>
+#include "cpu/cpu.h"
 
 #define PROGFILE "../binaries/isa/srl.bin"
 #define KB 1024
