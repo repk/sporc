@@ -77,6 +77,10 @@ struct cpu_desc {
  */
 struct cpu {
 	/**
+	 * Next pointer in global cpu instances linked list
+	 */
+	struct list_head next;
+	/**
 	 * Plugin descriptor
 	 */
 	struct cpu_desc const *cpu;
@@ -103,5 +107,6 @@ int cpu_exec(struct cpu *c);
 int cpu_boot(struct cpu *c, addr_t addr);
 struct cpu *cpu_create(struct cpucfg const *cfg);
 int cpu_destroy(struct cpu *c);
+struct cpu *cpu_get(char const *name);
 
 #endif

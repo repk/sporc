@@ -70,6 +70,8 @@ int cpu_boot(struct cpu *c, addr_t addr)
 	return c->cpu->cops->boot(c, addr);
 }
 
+static LIST_HEAD(cpulst);
+
 /**
  * Instantiate a cpu plugin subsystem.
  *
@@ -92,6 +94,7 @@ struct cpu *cpu_create(struct cpucfg const *cpu)
 	c->cpu = cdesc;
 	c->mem = cpu->mem;
 	strcpy(c->name, cpu->name);
+	list_add_tail(&c->next, &cpulst);
 	return c;
 }
 
@@ -102,7 +105,27 @@ struct cpu *cpu_create(struct cpucfg const *cpu)
  */
 int cpu_destroy(struct cpu *c)
 {
+	list_del(&c->next);
 	c->cpu->cops->destroy(c);
 	return 0;
 }
 
+/**
+ * Get cpu form its name
+ *
+ * @param name: CPU name to find
+ * @return: CPU if found, NULL pointer otherwise
+ */
+struct cpu *cpu_get(char const *name)
+{
+	struct cpu *cpu;
+
+	list_for_each_entry(cpu, &cpulst, next)
+		if(strcmp(cpu->name, name) == 0)
+			goto out;
+
+	/* No cpu found */
+	cpu = NULL;
+out:
+	return cpu;
+}
