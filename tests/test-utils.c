@@ -4,7 +4,10 @@
 #include "types.h"
 
 #include "cpu/cpu.h"
-#include "memory.h"
+#include "dev/device.h"
+#include "dev/cfg/ramctl.h"
+#include "dev/cfg/filemem.h"
+
 #include "test-utils.h"
 
 #include "../cpu/sparc/sparc.h"
@@ -49,21 +52,21 @@ uint32_t test_cpu_get_pc(struct cpu *cpu)
 uint32_t test_cpu_get_mem32(struct cpu *cpu, addr_t addr)
 {
 	uint32_t ret = 0;
-	memory_read32(cpu->mem, addr, &ret);
+	dev_read32(cpu->mem, addr, &ret);
 	return ret;
 }
 
 uint16_t test_cpu_get_mem16(struct cpu *cpu, addr_t addr)
 {
 	uint16_t ret = 0;
-	memory_read16(cpu->mem, addr, &ret);
+	dev_read16(cpu->mem, addr, &ret);
 	return ret;
 }
 
 uint8_t test_cpu_get_mem8(struct cpu *cpu, addr_t addr)
 {
 	uint8_t ret = 0;
-	memory_read8(cpu->mem, addr, &ret);
+	dev_read8(cpu->mem, addr, &ret);
 	return ret;
 }
 
@@ -99,11 +102,40 @@ static struct cpucfg cpucfg = {
 	.name = "cpu0",
 };
 
+/* Platform devices configuration */
+static struct devcfg devcfg[] = {
+	{
+		.drvname = "file-mem",
+		.name = "progmap",
+	},
+	{
+		.drvname = "ramctl",
+		.name = "ram0",
+		.cfg = DEVCFG(ramctl_cfg) {
+			.devlst = (struct rammap[]){
+				{
+					.devname = "progmap",
+					.addr = 0x0,
+					.perm = MP_R | MP_W | MP_X,
+					.sz = -1,
+				},
+				{}, /* Sentinel */
+			},
+		},
+	},
+};
+
 struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 		size_t memsz)
 {
+	struct filemem_cfg fc = {
+		.off = 0,
+		.sz = memsz,
+	};
 	struct cpu *cpu = NULL;
+	struct dev *d;
 	char file[FILENAME_MAX], *end;
+	size_t i;
 	int ret;
 
 	if(argc == 0) {
@@ -120,46 +152,58 @@ struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 		strncpy(file, memfile, FILENAME_MAX - 1);
 	}
 	file[FILENAME_MAX - 1] = '\0';
+	fc.path = file;
+	devcfg[0].cfg = &fc;
 
-	cpucfg.mem = memory_create("file-mem", file);
+	/* Create devices */
+	for(i = 0; i < ARRAY_SIZE(devcfg); ++i) {
+		if(dev_create(&devcfg[i]) == NULL) {
+			fprintf(stderr, "Cannot create dev %s\n",
+					devcfg[i].name);
+			goto cpuexit;
+		}
+	}
+
+	/* Get memory device */
+	cpucfg.mem = dev_get("ram0");
 	if(cpucfg.mem == NULL) {
-		fprintf(stderr, "Cannot create memory segment\n");
-		goto err;
+		fprintf(stderr, "No memory device\n");
+		goto devexit;
 	}
 
-	ret = memory_map(cpucfg.mem, 0, 0, memsz, MP_R | MP_W | MP_X);
-	if(ret < 0) {
-		fprintf(stderr, "Cannot map memory segment\n");
-		goto memexit;
-	}
-
+	/* Create Cpu */
 	cpu = cpu_create(&cpucfg);
 	if(cpu == NULL) {
 		fprintf(stderr, "Cannot create cpu\n");
-		goto memunmap;
+		goto err;
 	}
 
 	ret = cpu_boot(cpu, 0x0);
 	if(ret < 0) {
 		fprintf(stderr, "Cannot boot cpu\n");
-		goto cpuexit;
+		goto devexit;
 	}
 
 	return cpu;
 
+devexit:
+	for(i = ARRAY_SIZE(devcfg); i > 0; --i)
+		if((d = dev_get(devcfg[i - 1].name)) != NULL)
+			dev_destroy(d);
 cpuexit:
 	cpu_destroy(cpu);
-memunmap:
-	memory_unmap(cpucfg.mem, 0, memsz);
-memexit:
-	memory_destroy(cpucfg.mem);
 err:
 	return NULL;
 }
 
 void test_cpu_close(struct cpu *cpu)
 {
-	memory_unmap(cpu->mem, 0, -1);
-	memory_destroy(cpu->mem);
+	struct dev *d;
+	size_t i;
+
+	for(i = ARRAY_SIZE(devcfg); i > 0; --i)
+		if((d = dev_get(devcfg[i - 1].name)) != NULL)
+			dev_destroy(d);
+
 	cpu_destroy(cpu);
 }

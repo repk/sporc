@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cpu/cpu.h"
-#include "memory.h"
 #include "utils.h"
+#include "cpu/cpu.h"
+#include "dev/device.h"
+#include "dev/cfg/ramctl.h"
+#include "dev/cfg/filemem.h"
 
 #define PROGFILE "./example/example.bin"
 #define KB 1024
@@ -15,6 +17,29 @@
 static struct cpucfg cpucfg = {
 	.cpu = "sparc",
 	.name = "cpu0",
+};
+
+/* Platform devices configuration */
+static struct devcfg devcfg[] = {
+	{
+		.drvname = "file-mem",
+		.name = "progmap",
+	},
+	{
+		.drvname = "ramctl",
+		.name = "ram0",
+		.cfg = DEVCFG(ramctl_cfg) {
+			.devlst = (struct rammap[]){
+				{
+					.devname = "progmap",
+					.addr = 0x0,
+					.perm = MP_R | MP_W | MP_X,
+					.sz = -1,
+				},
+				{}, /* Sentinel */
+			},
+		},
+	},
 };
 
 int get_file_path(int argc, char **argv, char *file,
@@ -39,7 +64,13 @@ int get_file_path(int argc, char **argv, char *file,
 
 int main(int argc, char **argv)
 {
+	struct filemem_cfg fc = {
+		.off = 0,
+		.sz = MEMSZ,
+	};
 	struct cpu *cpu;
+	struct dev *d;
+	size_t i;
 	int ret;
 	char f[FILENAME_MAX];
 
@@ -49,17 +80,22 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Cannot get file path\n");
 		return -1;
 	}
+	fc.path = f;
+	devcfg[0].cfg = &fc;
 
-	cpucfg.mem = memory_create("file-mem", f);
-	if(cpucfg.mem == NULL) {
-		fprintf(stderr, "Cannot create memory segment\n");
-		return -1;
+	/* Create devices */
+	for(i = 0; i < ARRAY_SIZE(devcfg); ++i) {
+		if(dev_create(&devcfg[i]) == NULL) {
+			fprintf(stderr, "Cannot create dev %s\n",
+					devcfg[i].name);
+		}
 	}
 
-	ret = memory_map(cpucfg.mem, 0, 0, MEMSZ, MP_R | MP_W | MP_X);
-	if(ret < 0) {
-		fprintf(stderr, "Cannot map memory segment\n");
-		return -1;
+	/* Get memory device */
+	cpucfg.mem = dev_get("ram0");
+	if(cpucfg.mem == NULL) {
+		fprintf(stderr, "No memory device\n");
+		goto exit;
 	}
 
 	/* Create Cpu */
@@ -96,9 +132,11 @@ int main(int argc, char **argv)
 	}
 
 exit:
+	for(i = ARRAY_SIZE(devcfg); i > 0; --i)
+		if((d = dev_get(devcfg[i - 1].name)) != NULL)
+			dev_destroy(d);
+
 	cpu_destroy(cpu);
-	memory_unmap(cpucfg.mem, 0, MEMSZ);
-	memory_destroy(cpucfg.mem);
 
 	return 0;
 }

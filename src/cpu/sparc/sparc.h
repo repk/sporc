@@ -2,6 +2,7 @@
 #define _SPARC_H_
 
 #include "cpu/cpu.h"
+#include "dev/device.h"
 
 typedef uint32_t sreg;
 typedef uint8_t sridx;

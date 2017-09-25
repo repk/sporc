@@ -6,7 +6,7 @@
 #include "types.h"
 #include "list.h"
 
-#include "memory.h"
+#include "dev/device.h"
 
 #define CPUNAMESZ 64
 
@@ -15,7 +15,7 @@
  */
 struct cpucfg {
 	/* Cpu's memory device */
-	struct memory *mem;
+	struct dev *mem;
 	/* Name of cpu driver */
 	char const *cpu;
 	/* Name of cpu instance */
@@ -87,7 +87,7 @@ struct cpu {
 	/**
 	 * Cpu memory map
 	 */
-	struct memory *mem;
+	struct dev *mem;
 	/*
 	 * Cpu unique name
 	 */

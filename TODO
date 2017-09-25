@@ -11,3 +11,5 @@ TODO list not sorted:
 - Trap on unimplemented instruction
 - Support Error Mode
 - Support Y and ASR registers
+- Think of a way to have a cleaner devops (e.g. to get rid of fetch_isn*
+  callbacks)

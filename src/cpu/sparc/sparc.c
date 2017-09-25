@@ -2,9 +2,9 @@
 #include <endian.h>
 
 #include "utils.h"
+#include "types.h"
 
 #include "cpu/cpu.h"
-#include "memory.h"
 #include "sparc.h"
 #include "isn.h"
 #include "trap.h"
@@ -639,7 +639,7 @@ static int scpu_fetch(struct cpu *cpu)
 		return -1;
 
 	sreg npc = scpu->reg.pc[1];
-	ret = memory_fetch_isn32(cpu->mem, npc, &rd);
+	ret = dev_fetch_isn32(cpu->mem, npc, &rd);
 	if(ret != 0)
 		goto exit;
 
@@ -682,7 +682,7 @@ static int scpu_boot(struct cpu *cpu, addr_t addr)
 	/* TODO initialize special registers */
 
 	/* Prefetch the first instruction */
-	ret = memory_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
+	ret = dev_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
 	if(ret != 0)
 		goto exit;
 

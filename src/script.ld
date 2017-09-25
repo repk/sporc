@@ -1,8 +1,8 @@
 SECTIONS {
-	.rodata.memory : {
-		__memory_start = .;
-		KEEP(*(.rodata.memory))
-		__memory_end = .;
+	.rodata.driver : {
+		__drv_start = .;
+		KEEP(*(.rodata.driver))
+		__drv_end = .;
 	}
 	.rodata.cpu : {
 		__cpu_start = .;
