@@ -17,7 +17,7 @@ struct fmem_map_addr {
 	/* Actual mapp'ed memory data */
 	uint8_t *mapmem;
 	/* Virtual map address */
-	uintptr_t addr;
+	addr_t addr;
 	/* Size of map */
 	size_t size;
 	/* Offset in opened file */
@@ -71,7 +71,7 @@ static inline int fmem_perm_flag(perm_t perm)
 
 /* Find a map in plugin's map array */
 static inline struct fmem_map_addr *fmem_get_map(struct memory *mem,
-		uintptr_t addr, size_t sz)
+		addr_t addr, size_t sz)
 {
 	struct filemem *fm = to_filemem(mem);
 	size_t i;
@@ -90,7 +90,7 @@ static inline struct fmem_map_addr *fmem_get_map(struct memory *mem,
 	return &fm->maddr[i];
 }
 
-static int fmem_read8(struct memory *mem, uintptr_t addr, uint8_t *val)
+static int fmem_read8(struct memory *mem, addr_t addr, uint8_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -102,7 +102,7 @@ static int fmem_read8(struct memory *mem, uintptr_t addr, uint8_t *val)
 	return 0;
 }
 
-static int fmem_read16(struct memory *mem, uintptr_t addr, uint16_t *val)
+static int fmem_read16(struct memory *mem, addr_t addr, uint16_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -114,7 +114,7 @@ static int fmem_read16(struct memory *mem, uintptr_t addr, uint16_t *val)
 	return 0;
 }
 
-static int fmem_read32(struct memory *mem, uintptr_t addr, uint32_t *val)
+static int fmem_read32(struct memory *mem, addr_t addr, uint32_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -126,7 +126,7 @@ static int fmem_read32(struct memory *mem, uintptr_t addr, uint32_t *val)
 	return 0;
 }
 
-static int fmem_write8(struct memory *mem, uintptr_t addr, uint8_t val)
+static int fmem_write8(struct memory *mem, addr_t addr, uint8_t val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(val));
 
@@ -138,7 +138,7 @@ static int fmem_write8(struct memory *mem, uintptr_t addr, uint8_t val)
 	return 0;
 }
 
-static int fmem_write16(struct memory *mem, uintptr_t addr, uint16_t val)
+static int fmem_write16(struct memory *mem, addr_t addr, uint16_t val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(val));
 
@@ -150,7 +150,7 @@ static int fmem_write16(struct memory *mem, uintptr_t addr, uint16_t val)
 	return 0;
 }
 
-static int fmem_write32(struct memory *mem, uintptr_t addr, uint32_t val)
+static int fmem_write32(struct memory *mem, addr_t addr, uint32_t val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(val));
 
@@ -162,7 +162,7 @@ static int fmem_write32(struct memory *mem, uintptr_t addr, uint32_t val)
 	return 0;
 }
 
-static int fmem_fetch_isn8(struct memory *mem, uintptr_t addr, uint8_t *val)
+static int fmem_fetch_isn8(struct memory *mem, addr_t addr, uint8_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -174,7 +174,7 @@ static int fmem_fetch_isn8(struct memory *mem, uintptr_t addr, uint8_t *val)
 	return 0;
 }
 
-static int fmem_fetch_isn16(struct memory *mem, uintptr_t addr, uint16_t *val)
+static int fmem_fetch_isn16(struct memory *mem, addr_t addr, uint16_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -186,7 +186,7 @@ static int fmem_fetch_isn16(struct memory *mem, uintptr_t addr, uint16_t *val)
 	return 0;
 }
 
-static int fmem_fetch_isn32(struct memory *mem, uintptr_t addr, uint32_t *val)
+static int fmem_fetch_isn32(struct memory *mem, addr_t addr, uint32_t *val)
 {
 	struct fmem_map_addr *maddr = fmem_get_map(mem, addr, sizeof(*val));
 
@@ -198,7 +198,7 @@ static int fmem_fetch_isn32(struct memory *mem, uintptr_t addr, uint32_t *val)
 	return 0;
 }
 
-static int fmem_map(struct memory *mem, uintptr_t addr, off_t off, size_t sz,
+static int fmem_map(struct memory *mem, addr_t addr, off_t off, size_t sz,
 		perm_t perm)
 {
 	struct filemem *fmem = to_filemem(mem);
@@ -241,7 +241,7 @@ static int fmem_map(struct memory *mem, uintptr_t addr, off_t off, size_t sz,
 	return 0;
 }
 
-static int fmem_unmap(struct memory *mem, uintptr_t addr, size_t sz)
+static int fmem_unmap(struct memory *mem, addr_t addr, size_t sz)
 {
 	struct filemem *fm = to_filemem(mem);
 	size_t i;

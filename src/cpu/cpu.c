@@ -63,7 +63,7 @@ int cpu_exec(struct cpu *c)
  * @param c: cpu instance to boot
  * @return: 0 on success, -1 otherwise
  */
-int cpu_boot(struct cpu *c, uintptr_t addr)
+int cpu_boot(struct cpu *c, addr_t addr)
 {
 	return c->cpu->cops->boot(c, addr);
 }

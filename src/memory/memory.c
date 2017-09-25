@@ -72,7 +72,7 @@ void memory_destroy(struct memory *m)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_map(struct memory *m, uintptr_t addr, off_t off, size_t sz,
+int memory_map(struct memory *m, addr_t addr, off_t off, size_t sz,
 		perm_t perm)
 {
 	return m->mem->mops->map(m, addr, off, sz, perm);
@@ -87,7 +87,7 @@ int memory_map(struct memory *m, uintptr_t addr, off_t off, size_t sz,
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_unmap(struct memory *m, uintptr_t addr, size_t sz)
+int memory_unmap(struct memory *m, addr_t addr, size_t sz)
 {
 	return m->mem->mops->unmap(m, addr, sz);
 }
@@ -101,7 +101,7 @@ int memory_unmap(struct memory *m, uintptr_t addr, size_t sz)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_read8(struct memory *m, uintptr_t addr, uint8_t *val)
+int memory_read8(struct memory *m, addr_t addr, uint8_t *val)
 {
 	return m->mem->mops->read8(m, addr, val);
 }
@@ -115,7 +115,7 @@ int memory_read8(struct memory *m, uintptr_t addr, uint8_t *val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_read16(struct memory *m, uintptr_t addr, uint16_t *val)
+int memory_read16(struct memory *m, addr_t addr, uint16_t *val)
 {
 	return m->mem->mops->read16(m, addr, val);
 }
@@ -129,7 +129,7 @@ int memory_read16(struct memory *m, uintptr_t addr, uint16_t *val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_read32(struct memory *m, uintptr_t addr, uint32_t *val)
+int memory_read32(struct memory *m, addr_t addr, uint32_t *val)
 {
 	return m->mem->mops->read32(m, addr, val);
 }
@@ -143,7 +143,7 @@ int memory_read32(struct memory *m, uintptr_t addr, uint32_t *val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_write8(struct memory *m, uintptr_t addr, uint8_t val)
+int memory_write8(struct memory *m, addr_t addr, uint8_t val)
 {
 	return m->mem->mops->write8(m, addr, val);
 }
@@ -157,7 +157,7 @@ int memory_write8(struct memory *m, uintptr_t addr, uint8_t val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_write16(struct memory *m, uintptr_t addr, uint16_t val)
+int memory_write16(struct memory *m, addr_t addr, uint16_t val)
 {
 	return m->mem->mops->write16(m, addr, val);
 }
@@ -171,7 +171,7 @@ int memory_write16(struct memory *m, uintptr_t addr, uint16_t val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_write32(struct memory *m, uintptr_t addr, uint32_t val)
+int memory_write32(struct memory *m, addr_t addr, uint32_t val)
 {
 	return m->mem->mops->write32(m, addr, val);
 }
@@ -185,7 +185,7 @@ int memory_write32(struct memory *m, uintptr_t addr, uint32_t val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_fetch_isn8(struct memory *m, uintptr_t addr, uint8_t *val)
+int memory_fetch_isn8(struct memory *m, addr_t addr, uint8_t *val)
 {
 	return m->mem->mops->fetch_isn8(m, addr, val);
 }
@@ -199,7 +199,7 @@ int memory_fetch_isn8(struct memory *m, uintptr_t addr, uint8_t *val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_fetch_isn16(struct memory *m, uintptr_t addr, uint16_t *val)
+int memory_fetch_isn16(struct memory *m, addr_t addr, uint16_t *val)
 {
 	return m->mem->mops->fetch_isn16(m, addr, val);
 }
@@ -213,7 +213,7 @@ int memory_fetch_isn16(struct memory *m, uintptr_t addr, uint16_t *val)
  *
  * @return: 0 on success, negative number otherwise
  */
-int memory_fetch_isn32(struct memory *m, uintptr_t addr, uint32_t *val)
+int memory_fetch_isn32(struct memory *m, addr_t addr, uint32_t *val)
 {
 	return m->mem->mops->fetch_isn32(m, addr, val);
 }

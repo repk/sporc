@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "types.h"
+
 struct cpu_desc;
 
 /**
@@ -20,7 +22,7 @@ struct cpu_ops {
 	/**
 	 * Boot this cpu at specific address
 	 */
-	int (*boot)(struct cpu *cpu, uintptr_t addr);
+	int (*boot)(struct cpu *cpu, addr_t addr);
 
 	/* TODO addInterrupt */
 
@@ -76,7 +78,7 @@ struct cpu {
 int cpu_fetch(struct cpu *c);
 int cpu_decode(struct cpu *c);
 int cpu_exec(struct cpu *c);
-int cpu_boot(struct cpu *c, uintptr_t addr);
+int cpu_boot(struct cpu *c, addr_t addr);
 struct cpu *cpu_create(char const *name, struct memory *mem, char const *args);
 int cpu_destroy(struct cpu *c);
 

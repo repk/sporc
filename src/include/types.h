@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "cpu/sparc/types.h"
+
 /**
  * Read permission flag
  */

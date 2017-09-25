@@ -665,7 +665,7 @@ static int scpu_decode(struct cpu *cpu)
 /**
  * Boot sparc cpu at specific address
  */
-static int scpu_boot(struct cpu *cpu, uintptr_t addr)
+static int scpu_boot(struct cpu *cpu, addr_t addr)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 	uint32_t rd;
