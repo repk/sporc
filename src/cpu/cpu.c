@@ -92,7 +92,6 @@ struct cpu *cpu_create(struct cpucfg const *cpu)
 		return NULL;
 
 	c->cpu = cdesc;
-	c->mem = cpu->mem;
 	strcpy(c->name, cpu->name);
 	list_add_tail(&c->next, &cpulst);
 	return c;

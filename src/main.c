@@ -7,6 +7,7 @@
 #include "dev/device.h"
 #include "dev/cfg/ramctl.h"
 #include "dev/cfg/filemem.h"
+#include "dev/cfg/sparc-nommu.h"
 
 #define PROGFILE "./example/example.bin"
 #define KB 1024
@@ -14,7 +15,7 @@
 
 
 /* Sparc cpu configuration */
-static struct cpucfg cpucfg = {
+static struct cpucfg const cpucfg = {
 	.cpu = "sparc",
 	.name = "cpu0",
 };
@@ -39,6 +40,14 @@ static struct devcfg devcfg[] = {
 				{}, /* Sentinel */
 			},
 		},
+	},
+	{
+		.drvname = "sparc-nommu",
+		.name = "mmu0",
+		.cfg = DEVCFG(sparc_nommu_cfg) {
+			.mem = "ram0",
+			.cpu = "cpu0",
+		}
 	},
 };
 
@@ -83,26 +92,19 @@ int main(int argc, char **argv)
 	fc.path = f;
 	devcfg[0].cfg = &fc;
 
+	/* Create Cpu */
+	cpu = cpu_create(&cpucfg);
+	if(cpu == NULL) {
+		fprintf(stderr, "Cannot create cpu\n");
+		return -1;
+	}
+
 	/* Create devices */
 	for(i = 0; i < ARRAY_SIZE(devcfg); ++i) {
 		if(dev_create(&devcfg[i]) == NULL) {
 			fprintf(stderr, "Cannot create dev %s\n",
 					devcfg[i].name);
 		}
-	}
-
-	/* Get memory device */
-	cpucfg.mem = dev_get("ram0");
-	if(cpucfg.mem == NULL) {
-		fprintf(stderr, "No memory device\n");
-		goto exit;
-	}
-
-	/* Create Cpu */
-	cpu = cpu_create(&cpucfg);
-	if(cpu == NULL) {
-		fprintf(stderr, "Cannot create cpu\n");
-		return -1;
 	}
 
 	ret = cpu_boot(cpu, 0x0);

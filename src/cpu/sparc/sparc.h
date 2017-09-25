@@ -7,6 +7,7 @@
 typedef uint32_t sreg;
 typedef uint8_t sridx;
 
+struct dev *scpu_get_mem(struct cpu *cpu);
 sreg scpu_get_reg(struct cpu *cpu, sridx ridx);
 void scpu_set_reg(struct cpu *cpu, sridx ridx, sreg val);
 

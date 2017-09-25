@@ -14,8 +14,6 @@
  * Cpu configuration
  */
 struct cpucfg {
-	/* Cpu's memory device */
-	struct dev *mem;
 	/* Name of cpu driver */
 	char const *cpu;
 	/* Name of cpu instance */
@@ -84,10 +82,6 @@ struct cpu {
 	 * Plugin descriptor
 	 */
 	struct cpu_desc const *cpu;
-	/**
-	 * Cpu memory map
-	 */
-	struct dev *mem;
 	/*
 	 * Cpu unique name
 	 */

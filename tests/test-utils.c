@@ -7,6 +7,7 @@
 #include "dev/device.h"
 #include "dev/cfg/ramctl.h"
 #include "dev/cfg/filemem.h"
+#include "dev/cfg/sparc-nommu.h"
 
 #include "test-utils.h"
 
@@ -52,21 +53,21 @@ uint32_t test_cpu_get_pc(struct cpu *cpu)
 uint32_t test_cpu_get_mem32(struct cpu *cpu, addr_t addr)
 {
 	uint32_t ret = 0;
-	dev_read32(cpu->mem, addr, &ret);
+	dev_read32(scpu_get_mem(cpu), addr, &ret);
 	return ret;
 }
 
 uint16_t test_cpu_get_mem16(struct cpu *cpu, addr_t addr)
 {
 	uint16_t ret = 0;
-	dev_read16(cpu->mem, addr, &ret);
+	dev_read16(scpu_get_mem(cpu), addr, &ret);
 	return ret;
 }
 
 uint8_t test_cpu_get_mem8(struct cpu *cpu, addr_t addr)
 {
 	uint8_t ret = 0;
-	dev_read8(cpu->mem, addr, &ret);
+	dev_read8(scpu_get_mem(cpu), addr, &ret);
 	return ret;
 }
 
@@ -97,7 +98,7 @@ exit:
 }
 
 /* Cpu description */
-static struct cpucfg cpucfg = {
+static struct cpucfg const cpucfg = {
 	.cpu = "sparc",
 	.name = "cpu0",
 };
@@ -122,6 +123,14 @@ static struct devcfg devcfg[] = {
 				{}, /* Sentinel */
 			},
 		},
+	},
+	{
+		.drvname = "sparc-nommu",
+		.name = "mmu0",
+		.cfg = DEVCFG(sparc_nommu_cfg) {
+			.mem = "ram0",
+			.cpu = "cpu0",
+		}
 	},
 };
 
@@ -155,6 +164,13 @@ struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 	fc.path = file;
 	devcfg[0].cfg = &fc;
 
+	/* Create Cpu */
+	cpu = cpu_create(&cpucfg);
+	if(cpu == NULL) {
+		fprintf(stderr, "Cannot create cpu\n");
+		goto err;
+	}
+
 	/* Create devices */
 	for(i = 0; i < ARRAY_SIZE(devcfg); ++i) {
 		if(dev_create(&devcfg[i]) == NULL) {
@@ -162,20 +178,6 @@ struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 					devcfg[i].name);
 			goto cpuexit;
 		}
-	}
-
-	/* Get memory device */
-	cpucfg.mem = dev_get("ram0");
-	if(cpucfg.mem == NULL) {
-		fprintf(stderr, "No memory device\n");
-		goto devexit;
-	}
-
-	/* Create Cpu */
-	cpu = cpu_create(&cpucfg);
-	if(cpu == NULL) {
-		fprintf(stderr, "Cannot create cpu\n");
-		goto err;
 	}
 
 	ret = cpu_boot(cpu, 0x0);

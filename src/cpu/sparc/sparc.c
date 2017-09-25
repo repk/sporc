@@ -64,6 +64,7 @@ enum scpu_mode {
 #define SPARC_PIPESZ 2
 struct sparc_cpu {
 	struct cpu cpu;
+	struct dev *mem;
 	/* Cpu instruction pipeline */
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
@@ -99,6 +100,50 @@ static inline int scpu_is_error_mode(struct cpu *cpu)
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
 	return (scpu->mode == SM_ERR);
+}
+
+/**
+ * Register a memory controller
+ *
+ * @param cpu: cpu to add memory controller
+ * @param device: memory controller device
+ *
+ * @return: 0 on success, negative number otherwise
+ */
+int scpu_add_memory(struct cpu *cpu, struct dev *dev)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	if(scpu->mem)
+		return -EEXIST;
+
+	scpu->mem = dev;
+	return 0;
+}
+
+/**
+ * Remove a memory controller
+ *
+ * @param cpu: cpu to add memory controller
+ */
+void scpu_rm_memory(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	scpu->mem = NULL;
+}
+
+/**
+ * Get sparc cpu memory controller device
+ *
+ * @param cpu: cpu to get memory controller from
+ *
+ * @return: Memory controller device
+ */
+struct dev *scpu_get_mem(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	return scpu->mem;
 }
 
 /**
@@ -639,7 +684,7 @@ static int scpu_fetch(struct cpu *cpu)
 		return -1;
 
 	sreg npc = scpu->reg.pc[1];
-	ret = dev_fetch_isn32(cpu->mem, npc, &rd);
+	ret = dev_fetch_isn32(scpu->mem, npc, &rd);
 	if(ret != 0)
 		goto exit;
 
@@ -671,6 +716,9 @@ static int scpu_boot(struct cpu *cpu, addr_t addr)
 	uint32_t rd;
 	int ret;
 
+	if(scpu->mem == NULL)
+		return -1;
+
 	/* Initialize PC registers */
 	scpu->reg.pc[0] = addr;
 	scpu->reg.pc[1] = addr + 4;
@@ -682,7 +730,7 @@ static int scpu_boot(struct cpu *cpu, addr_t addr)
 	/* TODO initialize special registers */
 
 	/* Prefetch the first instruction */
-	ret = dev_fetch_isn32(cpu->mem, scpu->reg.pc[0], &rd);
+	ret = dev_fetch_isn32(scpu->mem, scpu->reg.pc[0], &rd);
 	if(ret != 0)
 		goto exit;
 
