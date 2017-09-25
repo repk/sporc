@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include "types.h"
+
 #include "cpu/cpu.h"
 
 /**
@@ -71,25 +73,25 @@ int cpu_boot(struct cpu *c, addr_t addr)
 /**
  * Instantiate a cpu plugin subsystem.
  *
- * @param name: Name of requested cpu plugin
- * @param args: cpu plugin specific arguments
+ * @param cfg: New cpu configuration
  * @return: NULL pointer on error, a cpu plugin instance otherwise
  */
-struct cpu *cpu_create(char const *name, struct memory *mem, char const *args)
+struct cpu *cpu_create(struct cpucfg const *cpu)
 {
 	struct cpu_desc const *cdesc;
 	struct cpu *c;
 
-	cdesc = cpu_desc_get(name);
+	cdesc = cpu_desc_get(cpu->cpu);
 	if(cdesc == NULL)
 		return NULL;
 
-	c = cdesc->cops->create(args);
+	c = cdesc->cops->create(cpu);
 	if(c == NULL)
 		return NULL;
 
 	c->cpu = cdesc;
-	c->mem = mem;
+	c->mem = cpu->mem;
+	strcpy(c->name, cpu->name);
 	return c;
 }
 

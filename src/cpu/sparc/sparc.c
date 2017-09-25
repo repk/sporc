@@ -777,10 +777,10 @@ static int scpu_exec(struct cpu *cpu)
 /**
  * Create a sparc cpu instance
  */
-static struct cpu *scpu_create(char const *args)
+static struct cpu *scpu_create(struct cpucfg const *cfg)
 {
 	struct sparc_cpu *scpu;
-	(void)args; /* TODO manage sparc families */
+	(void)cfg; /* TODO manage sparc families */
 
 	scpu = calloc(1, sizeof(*scpu));
 	if(scpu == NULL)

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "types.h"
+
 #include "cpu/cpu.h"
 #include "memory.h"
 #include "test-utils.h"
@@ -91,12 +93,17 @@ exit:
 	return ret;
 }
 
+/* Cpu description */
+static struct cpucfg cpucfg = {
+	.cpu = "sparc",
+	.name = "cpu0",
+};
+
 struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 		size_t memsz)
 {
 	struct cpu *cpu = NULL;
 	char file[FILENAME_MAX], *end;
-	struct memory *mem;
 	int ret;
 
 	if(argc == 0) {
@@ -114,19 +121,19 @@ struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 	}
 	file[FILENAME_MAX - 1] = '\0';
 
-	mem = memory_create("file-mem", file);
-	if(mem == NULL) {
+	cpucfg.mem = memory_create("file-mem", file);
+	if(cpucfg.mem == NULL) {
 		fprintf(stderr, "Cannot create memory segment\n");
 		goto err;
 	}
 
-	ret = memory_map(mem, 0, 0, memsz, MP_R | MP_W | MP_X);
+	ret = memory_map(cpucfg.mem, 0, 0, memsz, MP_R | MP_W | MP_X);
 	if(ret < 0) {
 		fprintf(stderr, "Cannot map memory segment\n");
 		goto memexit;
 	}
 
-	cpu = cpu_create("sparc", mem, NULL);
+	cpu = cpu_create(&cpucfg);
 	if(cpu == NULL) {
 		fprintf(stderr, "Cannot create cpu\n");
 		goto memunmap;
@@ -143,9 +150,9 @@ struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 cpuexit:
 	cpu_destroy(cpu);
 memunmap:
-	memory_unmap(mem, 0, memsz);
+	memory_unmap(cpucfg.mem, 0, memsz);
 memexit:
-	memory_destroy(mem);
+	memory_destroy(cpucfg.mem);
 err:
 	return NULL;
 }

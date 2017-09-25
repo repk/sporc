@@ -4,8 +4,26 @@
 #include <stdint.h>
 
 #include "types.h"
+#include "list.h"
 
-struct cpu_desc;
+#include "memory.h"
+
+#define CPUNAMESZ 64
+
+/**
+ * Cpu configuration
+ */
+struct cpucfg {
+	/* Cpu's memory device */
+	struct memory *mem;
+	/* Name of cpu driver */
+	char const *cpu;
+	/* Name of cpu instance */
+	char const name[CPUNAMESZ];
+	/* Cpu specific configuration */
+	void *cfg;
+};
+#define CPUCFG(n) &(struct n)
 
 /**
  * Cpu operations
@@ -14,7 +32,7 @@ struct cpu_ops {
 	/**
 	 * Plugin instantiation
 	 */
-	struct cpu *(*create)(char const *args);
+	struct cpu *(*create)(struct cpucfg const *cfg);
 	/**
 	 * Plugin instance destruction
 	 */
@@ -66,6 +84,10 @@ struct cpu {
 	 * Cpu memory map
 	 */
 	struct memory *mem;
+	/*
+	 * Cpu unique name
+	 */
+	char name[CPUNAMESZ];
 };
 
 /**
@@ -79,7 +101,7 @@ int cpu_fetch(struct cpu *c);
 int cpu_decode(struct cpu *c);
 int cpu_exec(struct cpu *c);
 int cpu_boot(struct cpu *c, addr_t addr);
-struct cpu *cpu_create(char const *name, struct memory *mem, char const *args);
+struct cpu *cpu_create(struct cpucfg const *cfg);
 int cpu_destroy(struct cpu *c);
 
 #endif

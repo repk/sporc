@@ -10,6 +10,13 @@
 #define KB 1024
 #define MEMSZ (250 * KB)
 
+
+/* Sparc cpu configuration */
+static struct cpucfg cpucfg = {
+	.cpu = "sparc",
+	.name = "cpu0",
+};
+
 int get_file_path(int argc, char **argv, char *file,
 		char *path, size_t sz)
 {
@@ -33,29 +40,30 @@ int get_file_path(int argc, char **argv, char *file,
 int main(int argc, char **argv)
 {
 	struct cpu *cpu;
-	struct memory *mem;
 	int ret;
 	char f[FILENAME_MAX];
 
+	/* Configure file path */
 	ret = get_file_path(argc, argv, PROGFILE, f, ARRAY_SIZE(f));
 	if(ret != 0) {
 		fprintf(stderr, "Cannot get file path\n");
 		return -1;
 	}
 
-	mem = memory_create("file-mem", f);
-	if(mem == NULL) {
+	cpucfg.mem = memory_create("file-mem", f);
+	if(cpucfg.mem == NULL) {
 		fprintf(stderr, "Cannot create memory segment\n");
 		return -1;
 	}
 
-	ret = memory_map(mem, 0, 0, MEMSZ, MP_R | MP_W | MP_X);
+	ret = memory_map(cpucfg.mem, 0, 0, MEMSZ, MP_R | MP_W | MP_X);
 	if(ret < 0) {
 		fprintf(stderr, "Cannot map memory segment\n");
 		return -1;
 	}
 
-	cpu = cpu_create("sparc", mem, NULL);
+	/* Create Cpu */
+	cpu = cpu_create(&cpucfg);
 	if(cpu == NULL) {
 		fprintf(stderr, "Cannot create cpu\n");
 		return -1;
@@ -64,7 +72,7 @@ int main(int argc, char **argv)
 	ret = cpu_boot(cpu, 0x0);
 	if(ret < 0) {
 		fprintf(stderr, "Cannot boot cpu\n");
-		return -1;
+		goto exit;
 	}
 
 	while(1) {
@@ -89,8 +97,8 @@ int main(int argc, char **argv)
 
 exit:
 	cpu_destroy(cpu);
-	memory_unmap(mem, 0, MEMSZ);
-	memory_destroy(mem);
+	memory_unmap(cpucfg.mem, 0, MEMSZ);
+	memory_destroy(cpucfg.mem);
 
 	return 0;
 }
