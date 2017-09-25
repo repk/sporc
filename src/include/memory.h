@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "types.h"
+
 struct memory;
 
 /**
@@ -22,7 +24,7 @@ struct memory_ops {
 	 * Map a bunch of memory
 	 */
 	int (*map)(struct memory *m, uintptr_t addr, off_t off, size_t sz,
-			uint8_t perm);
+			perm_t perm);
 	/**
 	 * Unmap a mapp'ed memory
 	 */
@@ -112,7 +114,7 @@ struct memory {
 struct memory *memory_create(char const *name, char const *args);
 void memory_destroy(struct memory *m);
 int memory_map(struct memory *m, uintptr_t addr, off_t off, size_t sz,
-		uint8_t perm);
+		perm_t perm);
 int memory_unmap(struct memory *m, uintptr_t addr, size_t sz);
 int memory_read8(struct memory *m, uintptr_t addr, uint8_t *val);
 int memory_read16(struct memory *m, uintptr_t addr, uint16_t *val);

@@ -23,7 +23,7 @@ struct fmem_map_addr {
 	/* Offset in opened file */
 	off_t off;
 	/* Permission for this particular map chunk */
-	uint8_t perm;
+	perm_t perm;
 };
 
 struct filemem {
@@ -35,13 +35,13 @@ struct filemem {
 	/* Opened file fd */
 	int fd;
 	/* Opened file most permissive rights */
-	uint8_t perm;
+	perm_t perm;
 };
 
 #define to_filemem(m) (container_of(m, struct filemem, mem))
 
 /* Convert a sporc file permission to a POSIX one */
-static inline int fmem_perm_flag(uint8_t perm)
+static inline int fmem_perm_flag(perm_t perm)
 {
 	int flag = -1;
 
@@ -199,7 +199,7 @@ static int fmem_fetch_isn32(struct memory *mem, uintptr_t addr, uint32_t *val)
 }
 
 static int fmem_map(struct memory *mem, uintptr_t addr, off_t off, size_t sz,
-		uint8_t perm)
+		perm_t perm)
 {
 	struct filemem *fmem = to_filemem(mem);
 	struct fmem_map_addr *fa;
@@ -269,7 +269,7 @@ static struct memory *fmem_create(char const *file)
 	struct stat st;
 	size_t i;
 	int err, flag, fd = -1;
-	static uint8_t const perm[] = {
+	static perm_t const perm[] = {
 		MP_R | MP_W,
 		MP_W,
 		MP_R,

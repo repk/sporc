@@ -73,7 +73,7 @@ void memory_destroy(struct memory *m)
  * @return: 0 on success, negative number otherwise
  */
 int memory_map(struct memory *m, uintptr_t addr, off_t off, size_t sz,
-		uint8_t perm)
+		perm_t perm)
 {
 	return m->mem->mops->map(m, addr, off, sz, perm);
 }
