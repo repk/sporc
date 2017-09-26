@@ -39,6 +39,7 @@ test isa ldsb
 test isa ldsba
 test isa ldub
 test isa ldsh
+test isa ldsha
 test isa lduh
 test isa ld
 test isa ldd
