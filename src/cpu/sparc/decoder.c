@@ -312,6 +312,7 @@ static int isn_decode_op3_3(struct sparc_isn *isn)
 		_OP3_ISN_INT(10, SI_LDSH),
 		_OP3_ISN_INT(26, SI_LDSHA),
 		_OP3_ISN_INT(1, SI_LDUB),
+		_OP3_ISN_INT(17, SI_LDUBA),
 		_OP3_ISN_INT(2, SI_LDUH),
 		_OP3_ISN_INT(0, SI_LD),
 		_OP3_ISN_INT(3, SI_LDD),
