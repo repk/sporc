@@ -619,7 +619,7 @@ struct isn_handler_altmem {
 	.sz = s,							\
 }
 
-#define INIT_ISN_HDL_MEMA(o, s) {					\
+#define INIT_ISN_HDL_ALTMEM(o, s) {					\
 	.fmt3 = INIT_ISN_HDL_FMT3_ASI(isn_exec_altmem),			\
 	.op = o,							\
 	.sz = s,							\
@@ -627,16 +627,12 @@ struct isn_handler_altmem {
 
 #define DEFINE_ISN_HDL_MEM(n, o, s)					\
 	static struct isn_handler_mem const				\
-		isn_handler_ ## n = INIT_ISN_HDL_MEM(o, s)
-
-#define DEFINE_ISN_HDL_MEMA(n, o, s)					\
+		isn_handler_ ## n = INIT_ISN_HDL_MEM(o, s);		\
 	static struct isn_handler_altmem const				\
-		isn_handler_ ## n ## A = INIT_ISN_HDL_MEMA(o, s)
+		isn_handler_ ## n ## A = INIT_ISN_HDL_ALTMEM(o, s)
 
 #define ISN_HDL_MEM_ENTRY(i)						\
-	[SI_ ## i] = &isn_handler_ ## i.fmt3.hdl
-
-#define ISN_HDL_MEMA_ENTRY(i)						\
+	[SI_ ## i] = &isn_handler_ ## i.fmt3.hdl,			\
 	[SI_ ## i ## A] = &isn_handler_ ## i ## A.fmt3.hdl
 
 /* Check address is aligned on a power of two bit size */
@@ -705,7 +701,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDSB, isn_exec_ldsb, 8);
-DEFINE_ISN_HDL_MEMA(LDSB, isn_exec_ldsb, 8);
 
 static int isn_exec_ldsh(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -722,7 +717,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDSH, isn_exec_ldsh, 16);
-DEFINE_ISN_HDL_MEMA(LDSH, isn_exec_ldsh, 16);
 
 static int isn_exec_ldub(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -739,7 +733,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDUB, isn_exec_ldub, 8);
-DEFINE_ISN_HDL_MEMA(LDUB, isn_exec_ldub, 8);
 
 static int isn_exec_lduh(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -756,7 +749,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDUH, isn_exec_lduh, 16);
-DEFINE_ISN_HDL_MEMA(LDUH, isn_exec_lduh, 16);
 
 static int isn_exec_ld(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -773,7 +765,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LD, isn_exec_ld, 32);
-DEFINE_ISN_HDL_MEMA(LD, isn_exec_ld, 32);
 
 static int isn_exec_ldd(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -799,7 +790,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDD, isn_exec_ldd, 64);
-DEFINE_ISN_HDL_MEMA(LDD, isn_exec_ldd, 64);
 
 static int isn_exec_stb(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -807,7 +797,6 @@ static int isn_exec_stb(struct cpu *cpu, struct dev *mem, sridx rd,
 	return dev_write8(mem, ((addr_t)v1) + v2, scpu_get_reg(cpu, rd));
 }
 DEFINE_ISN_HDL_MEM(STB, isn_exec_stb, 8);
-DEFINE_ISN_HDL_MEMA(STB, isn_exec_stb, 8);
 
 static int isn_exec_sth(struct cpu *cpu, struct dev *mem,  sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -816,7 +805,6 @@ static int isn_exec_sth(struct cpu *cpu, struct dev *mem,  sridx rd,
 			htobe16(scpu_get_reg(cpu, rd)));
 }
 DEFINE_ISN_HDL_MEM(STH, isn_exec_sth, 16);
-DEFINE_ISN_HDL_MEMA(STH, isn_exec_sth, 16);
 
 static int isn_exec_st(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -825,7 +813,6 @@ static int isn_exec_st(struct cpu *cpu, struct dev *mem, sridx rd,
 			htobe32(scpu_get_reg(cpu, rd)));
 }
 DEFINE_ISN_HDL_MEM(ST, isn_exec_st, 32);
-DEFINE_ISN_HDL_MEMA(ST, isn_exec_st, 32);
 
 static int isn_exec_std(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -847,7 +834,6 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(STD, isn_exec_std, 64);
-DEFINE_ISN_HDL_MEMA(STD, isn_exec_std, 64);
 
 /* ---------------------- Icc test -------------------------- */
 
@@ -1280,25 +1266,15 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_ALUcc64_ENTRY(UDIV),
 	ISN_HDL_ALUcc64_ENTRY(SDIV),
 	ISN_HDL_MEM_ENTRY(LDSB),
-	ISN_HDL_MEMA_ENTRY(LDSB),
 	ISN_HDL_MEM_ENTRY(LDSH),
-	ISN_HDL_MEMA_ENTRY(LDSH),
 	ISN_HDL_MEM_ENTRY(LDUB),
-	ISN_HDL_MEMA_ENTRY(LDUB),
 	ISN_HDL_MEM_ENTRY(LDUH),
-	ISN_HDL_MEM_ENTRY(LDUHA),
 	ISN_HDL_MEM_ENTRY(LD),
-	ISN_HDL_MEMA_ENTRY(LD),
 	ISN_HDL_MEM_ENTRY(LDD),
-	ISN_HDL_MEMA_ENTRY(LDD),
 	ISN_HDL_MEM_ENTRY(STB),
-	ISN_HDL_MEMA_ENTRY(STB),
 	ISN_HDL_MEM_ENTRY(STH),
-	ISN_HDL_MEMA_ENTRY(STH),
 	ISN_HDL_MEM_ENTRY(ST),
-	ISN_HDL_MEMA_ENTRY(ST),
 	ISN_HDL_MEM_ENTRY(STD),
-	ISN_HDL_MEMA_ENTRY(STD),
 	ISN_HDL_ENTRY(BA),
 	ISN_HDL_BICC_ENTRY(BN),
 	ISN_HDL_BICC_ENTRY(BNE),
