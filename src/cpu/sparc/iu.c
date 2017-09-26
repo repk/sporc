@@ -847,6 +847,7 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(STD, isn_exec_std, 64);
+DEFINE_ISN_HDL_MEMA(STD, isn_exec_std, 64);
 
 /* ---------------------- Icc test -------------------------- */
 
@@ -1297,6 +1298,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_MEM_ENTRY(ST),
 	ISN_HDL_MEMA_ENTRY(ST),
 	ISN_HDL_MEM_ENTRY(STD),
+	ISN_HDL_MEMA_ENTRY(STD),
 	ISN_HDL_ENTRY(BA),
 	ISN_HDL_BICC_ENTRY(BN),
 	ISN_HDL_BICC_ENTRY(BNE),

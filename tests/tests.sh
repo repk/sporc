@@ -38,6 +38,7 @@ test isa stha
 test isa st
 test isa sta
 test isa std
+test isa stda
 test isa ldsb
 test isa ldsba
 test isa ldub
