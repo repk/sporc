@@ -32,6 +32,7 @@ test isa sub
 test isa subcc
 test isa g0
 test isa stb
+test isa stba
 test isa sth
 test isa st
 test isa std
