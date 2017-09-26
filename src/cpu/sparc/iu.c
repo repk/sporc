@@ -135,6 +135,53 @@ out:
 	return ret;
 }
 
+/* ---------- Define Format 3 ASI instruction dispatch ---------- */
+
+/* Format3 instruction handler */
+struct isn_handler_fmt3_asi {
+	struct isn_handler hdl;
+	int (*op)(struct isn_handler const *hdl, struct cpu *cpu,
+			sridx rd, asi_t id, uint32_t v1, uint32_t v2);
+};
+#define to_handler_fmt3_asi(h)						\
+	(container_of(h, struct isn_handler_fmt3_asi, hdl))
+
+/* Define a format3 instruction handler */
+#define INIT_ISN_HDL_FMT3_ASI(o) {					\
+	.hdl = INIT_ISN_HDL(isn_exec_fmt3_asi),				\
+	.op = o,							\
+}
+
+#define DEFINE_ISN_HDL_FMT3_ASI(n, o)					\
+	static struct isn_handler_fmt3_asi const			\
+		isn_handler_ ## n = INIT_ISN_HDL_FMT3_ASI(o)
+
+#define ISN_HDL_FMT3_ASI_ENTRY(i) [SI_ ## i] = &isn_handler_ ## i.hdl
+
+/* Fetch Format3 ASI params then call the proper instruction operation */
+static int isn_exec_fmt3_asi(struct isn_handler const *hdl, struct cpu *cpu,
+		struct sparc_isn const *isn)
+{
+	struct isn_handler_fmt3_asi const *fh = to_handler_fmt3_asi(hdl);
+	struct sparc_ifmt_op3_reg const *i = to_ifmt(op3_reg, isn);
+	sridx rd;
+	uint32_t v1, v2;
+	int ret;
+	asi_t id;
+
+	if(isn->fmt != SIF_OP3_REG)
+		return -1;
+
+	rd = i->rd;
+	v1 = scpu_get_reg(cpu, i->rs1);
+	v2 = scpu_get_reg(cpu, i->rs2);
+	id = i->asi;
+
+	ret = fh->op(hdl, cpu, rd, id, v1, v2);
+
+	return ret;
+}
+
 /* ---------------- jumpl instruction handler ------------------ */
 
 static int isn_exec_jmpl(struct isn_handler const *hdl, struct cpu *cpu,
@@ -555,9 +602,25 @@ struct isn_handler_mem {
 #define to_handler_mem(h)						\
 	(container_of(to_handler_fmt3(h), struct isn_handler_mem, fmt3))
 
+struct isn_handler_altmem {
+	struct isn_handler_fmt3_asi fmt3;
+	int (*op)(struct cpu *cpu, struct dev *mem, sridx rd,
+			uint32_t v1, uint32_t v2);
+	size_t sz;
+};
+
+#define to_handler_altmem(h)						\
+	(container_of(to_handler_fmt3_asi(h), struct isn_handler_altmem, fmt3))
+
 /* Define a Memory instruction handler */
 #define INIT_ISN_HDL_MEM(o, s) {					\
 	.fmt3 = INIT_ISN_HDL_FMT3(isn_exec_mem),			\
+	.op = o,							\
+	.sz = s,							\
+}
+
+#define INIT_ISN_HDL_MEMA(o, s) {					\
+	.fmt3 = INIT_ISN_HDL_FMT3_ASI(isn_exec_altmem),			\
 	.op = o,							\
 	.sz = s,							\
 }
@@ -566,8 +629,15 @@ struct isn_handler_mem {
 	static struct isn_handler_mem const				\
 		isn_handler_ ## n = INIT_ISN_HDL_MEM(o, s)
 
+#define DEFINE_ISN_HDL_MEMA(n, o, s)					\
+	static struct isn_handler_altmem const				\
+		isn_handler_ ## n ## A = INIT_ISN_HDL_MEMA(o, s)
+
 #define ISN_HDL_MEM_ENTRY(i)						\
 	[SI_ ## i] = &isn_handler_ ## i.fmt3.hdl
+
+#define ISN_HDL_MEMA_ENTRY(i)						\
+	[SI_ ## i ## A] = &isn_handler_ ## i ## A.fmt3.hdl
 
 /* Check address is aligned on a power of two bit size */
 #define ISN_MEM_ALIGNSZ(a, s) (((a) & (((s) >> 3) - 1)) == 0)
@@ -586,6 +656,30 @@ static int isn_exec_mem(struct isn_handler const *hdl, struct cpu *cpu,
 	}
 
 	mem = scpu_get_dmem(cpu);
+	if(mem == NULL)
+		goto out;
+
+	ret = mh->op(cpu, mem, rd, v1, v2);
+	if(ret != 0)
+		scpu_trap(cpu, ST_DACCESS_EXCEP);
+out:
+	return 0;
+}
+
+/* Dispatch a alternate memory load/store instruction */
+static int isn_exec_altmem(struct isn_handler const *hdl, struct cpu *cpu,
+		sridx rd, asi_t id, uint32_t v1, uint32_t v2)
+{
+	struct isn_handler_altmem *mh = to_handler_altmem(hdl);
+	struct dev *mem;
+	int ret;
+
+	if(!ISN_MEM_ALIGNSZ(v1 + v2, mh->sz)) {
+		scpu_trap(cpu, ST_MEM_UNALIGNED);
+		goto out;
+	}
+
+	mem = scpu_get_mem(cpu, id);
 	if(mem == NULL)
 		goto out;
 
