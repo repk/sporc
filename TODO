@@ -5,7 +5,6 @@ TODO list not sorted:
 - Initialize registers correctly (It seems that only PSR's ET and S bits init
   are mandatory as well as a ASI of 9)
 - Add configurable number of window
-- Support for ASI
 - Support for some IO (e.g. UART, ...)
 - Support for privileged/unprivileged instructions
 - Trap on unimplemented instruction

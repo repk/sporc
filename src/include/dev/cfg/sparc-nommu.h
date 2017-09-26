@@ -5,8 +5,10 @@
 struct sparc_nommu_cfg {
 	/* Sparc cpu */
 	char const *cpu;
-	/* Memory controller device name */
-	char const *mem;
+	/* Data memory controller device name */
+	char const *dmem;
+	/* Instruction memory controller device name */
+	char const *imem;
 };
 
 #endif

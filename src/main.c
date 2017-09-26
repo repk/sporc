@@ -45,7 +45,8 @@ static struct devcfg devcfg[] = {
 		.drvname = "sparc-nommu",
 		.name = "mmu0",
 		.cfg = DEVCFG(sparc_nommu_cfg) {
-			.mem = "ram0",
+			.dmem = "ram0",
+			.imem = "ram0",
 			.cpu = "cpu0",
 		}
 	},

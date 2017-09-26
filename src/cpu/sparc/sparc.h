@@ -2,12 +2,12 @@
 #define _SPARC_H_
 
 #include "cpu/cpu.h"
+#include "cpu/sparc/sparc.h"
 #include "dev/device.h"
 
 typedef uint32_t sreg;
 typedef uint8_t sridx;
 
-struct dev *scpu_get_mem(struct cpu *cpu);
 sreg scpu_get_reg(struct cpu *cpu, sridx ridx);
 void scpu_set_reg(struct cpu *cpu, sridx ridx, sreg val);
 
@@ -22,6 +22,9 @@ void scpu_set_cc_c(struct cpu *cpu, uint8_t val);
 
 sreg scpu_get_pc(struct cpu *cpu);
 sreg scpu_get_npc(struct cpu *cpu);
+struct dev *scpu_get_mem(struct cpu *cpu, asi_t id);
+struct dev *scpu_get_dmem(struct cpu *cpu);
+struct dev *scpu_get_imem(struct cpu *cpu);
 int scpu_get_psr(struct cpu *cpu, sreg *val);
 int scpu_set_psr(struct cpu *cpu, sreg val);
 int scpu_get_wim(struct cpu *cpu, sreg *val);

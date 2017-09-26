@@ -61,10 +61,12 @@ enum scpu_mode {
 	SM_EXC,
 };
 
+#define SPARC_ASSZ 256
 #define SPARC_PIPESZ 2
 struct sparc_cpu {
 	struct cpu cpu;
-	struct dev *mem;
+	/* Sparc alternate spaces mapping */
+	struct dev *altspace[SPARC_ASSZ];
 	/* Cpu instruction pipeline */
 	union sparc_isn_fill pipeline[SPARC_PIPESZ];
 	struct sparc_registers reg;
@@ -100,50 +102,6 @@ static inline int scpu_is_error_mode(struct cpu *cpu)
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
 	return (scpu->mode == SM_ERR);
-}
-
-/**
- * Register a memory controller
- *
- * @param cpu: cpu to add memory controller
- * @param device: memory controller device
- *
- * @return: 0 on success, negative number otherwise
- */
-int scpu_add_memory(struct cpu *cpu, struct dev *dev)
-{
-	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
-
-	if(scpu->mem)
-		return -EEXIST;
-
-	scpu->mem = dev;
-	return 0;
-}
-
-/**
- * Remove a memory controller
- *
- * @param cpu: cpu to add memory controller
- */
-void scpu_rm_memory(struct cpu *cpu)
-{
-	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
-
-	scpu->mem = NULL;
-}
-
-/**
- * Get sparc cpu memory controller device
- *
- * @param cpu: cpu to get memory controller from
- *
- * @return: Memory controller device
- */
-struct dev *scpu_get_mem(struct cpu *cpu)
-{
-	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
-	return scpu->mem;
 }
 
 /**
@@ -197,6 +155,125 @@ static void scpu_tflag_set(struct cpu *cpu, uint8_t tn)
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
 
 	tq_raise(&scpu->tq, tn);
+}
+
+/**
+ * Register a memory controller for sparc alternate space accesses
+ *
+ * @param cpu: cpu to register memory controller into
+ * @param id: Alternate space id managed by memory controller
+ * @param dev: Memory controller device
+ *
+ * @return: 0 on success, negative number otherwise
+ */
+int scpu_register_mem(struct cpu * cpu, asi_t id, struct dev *dev)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	if(scpu->altspace[id] != NULL)
+		return -EEXIST;
+
+	scpu->altspace[id] = dev;
+	return 0;
+}
+
+/**
+ * Remove a memory controller for sparc alternate space accesses
+ *
+ * @param cpu: cpu to remove memory controller from
+ * @param id: Alternate space id managed by memory controller
+ *
+ * @return: 0 on success, negative number otherwise
+ */
+int scpu_remove_mem(struct cpu * cpu, asi_t id)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+
+	if(scpu->altspace[id] == NULL)
+		return -EINVAL;
+
+	scpu->altspace[id] = NULL;
+	return 0;
+}
+
+/**
+ * Get sparc cpu alternate space memory controller device
+ *
+ * @param cpu: cpu to get memory controller from
+ * @param id: Alternate space id
+ *
+ * @return: Memory controller device
+ */
+struct dev *scpu_get_mem(struct cpu *cpu, asi_t id)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	struct dev *ret = NULL;
+
+	if(!PSR_S(&scpu->reg)) {
+		scpu_tflag_set(cpu, ST_PRIV_EXCEP);
+		goto out;
+	}
+
+	if(scpu->altspace[id] == NULL) {
+		scpu_tflag_set(cpu, ST_DACCESS_EXCEP);
+		goto out;
+	}
+
+	ret = scpu->altspace[id];
+out:
+	return ret;
+}
+
+/**
+ * Get sparc cpu data space memory controller device
+ *
+ * @param cpu: cpu to get memory controller from
+ *
+ * @return: Memory controller device
+ */
+struct dev *scpu_get_dmem(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	struct dev *ret = NULL;
+	asi_t id = SPARC_AS_UDATA;
+
+	if(PSR_S(&scpu->reg))
+		id = SPARC_AS_SDATA;
+
+	if(scpu->altspace[id] == NULL) {
+		scpu_tflag_set(cpu, ST_DACCESS_EXCEP);
+		goto out;
+	}
+
+	ret = scpu->altspace[id];
+out:
+	return ret;
+}
+
+/**
+ * Get sparc cpu instruction space memory controller device
+ *
+ * @param cpu: cpu to get memory controller from
+ *
+ * @return: Memory controller device
+ */
+struct dev *scpu_get_imem(struct cpu *cpu)
+{
+	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	struct dev *ret = NULL;
+	asi_t id = SPARC_AS_UISN;
+
+	if(PSR_S(&scpu->reg))
+		id = SPARC_AS_SISN;
+
+	if(scpu->altspace[id] == NULL) {
+		scpu_tflag_set(cpu, ST_IACCESS_EXCEP);
+		goto out;
+	}
+
+	ret = scpu->altspace[id];
+out:
+	return ret;
 }
 
 /**
@@ -677,14 +754,19 @@ void scpu_exit_trap(struct cpu *cpu, uint32_t jmp)
 static int scpu_fetch(struct cpu *cpu)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	struct dev *mem;
 	uint32_t rd;
 	int ret = 0;
 
 	if(scpu_is_error_mode(cpu))
 		return -1;
 
+	mem = scpu_get_imem(cpu);
+	if(mem == NULL)
+		goto exit;
+
 	sreg npc = scpu->reg.pc[1];
-	ret = dev_fetch_isn32(scpu->mem, npc, &rd);
+	ret = dev_read32(mem, npc, &rd);
 	if(ret != 0)
 		goto exit;
 
@@ -713,11 +795,9 @@ static int scpu_decode(struct cpu *cpu)
 static int scpu_boot(struct cpu *cpu, addr_t addr)
 {
 	struct sparc_cpu *scpu = to_sparc_cpu(cpu);
+	struct dev *mem;
 	uint32_t rd;
-	int ret;
-
-	if(scpu->mem == NULL)
-		return -1;
+	int ret = 0;
 
 	/* Initialize PC registers */
 	scpu->reg.pc[0] = addr;
@@ -729,8 +809,12 @@ static int scpu_boot(struct cpu *cpu, addr_t addr)
 
 	/* TODO initialize special registers */
 
+	mem = scpu_get_imem(cpu);
+	if(mem == NULL)
+		goto exit;
+
 	/* Prefetch the first instruction */
-	ret = dev_fetch_isn32(scpu->mem, scpu->reg.pc[0], &rd);
+	ret = dev_read32(mem, scpu->reg.pc[0], &rd);
 	if(ret != 0)
 		goto exit;
 

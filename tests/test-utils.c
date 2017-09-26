@@ -53,21 +53,21 @@ uint32_t test_cpu_get_pc(struct cpu *cpu)
 uint32_t test_cpu_get_mem32(struct cpu *cpu, addr_t addr)
 {
 	uint32_t ret = 0;
-	dev_read32(scpu_get_mem(cpu), addr, &ret);
+	dev_read32(scpu_get_dmem(cpu), addr, &ret);
 	return ret;
 }
 
 uint16_t test_cpu_get_mem16(struct cpu *cpu, addr_t addr)
 {
 	uint16_t ret = 0;
-	dev_read16(scpu_get_mem(cpu), addr, &ret);
+	dev_read16(scpu_get_dmem(cpu), addr, &ret);
 	return ret;
 }
 
 uint8_t test_cpu_get_mem8(struct cpu *cpu, addr_t addr)
 {
 	uint8_t ret = 0;
-	dev_read8(scpu_get_mem(cpu), addr, &ret);
+	dev_read8(scpu_get_dmem(cpu), addr, &ret);
 	return ret;
 }
 
@@ -128,7 +128,8 @@ static struct devcfg devcfg[] = {
 		.drvname = "sparc-nommu",
 		.name = "mmu0",
 		.cfg = DEVCFG(sparc_nommu_cfg) {
-			.mem = "ram0",
+			.dmem = "ram0",
+			.imem = "ram0",
 			.cpu = "cpu0",
 		}
 	},

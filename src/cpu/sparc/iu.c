@@ -547,7 +547,8 @@ DEFINE_ISN_HDL_ALUcc64(SDIV, isn_exec_sdiv, isn_alu_icc64_sdiv);
 /* Memory instruction handler */
 struct isn_handler_mem {
 	struct isn_handler_fmt3 fmt3;
-	int (*op)(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2);
+	int (*op)(struct cpu *cpu, struct dev *mem, sridx rd,
+			uint32_t v1, uint32_t v2);
 	size_t sz;
 };
 
@@ -576,6 +577,7 @@ static int isn_exec_mem(struct isn_handler const *hdl, struct cpu *cpu,
 		sridx rd, uint32_t v1, uint32_t v2)
 {
 	struct isn_handler_mem *mh = to_handler_mem(hdl);
+	struct dev *mem;
 	int ret;
 
 	if(!ISN_MEM_ALIGNSZ(v1 + v2, mh->sz)) {
@@ -583,19 +585,24 @@ static int isn_exec_mem(struct isn_handler const *hdl, struct cpu *cpu,
 		goto out;
 	}
 
-	ret = mh->op(cpu, rd, v1, v2);
+	mem = scpu_get_dmem(cpu);
+	if(mem == NULL)
+		goto out;
+
+	ret = mh->op(cpu, mem, rd, v1, v2);
 	if(ret != 0)
 		scpu_trap(cpu, ST_DACCESS_EXCEP);
 out:
 	return 0;
 }
 
-static int isn_exec_ldsb(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_ldsb(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
-	int ret;
+	int ret = 0;
 	uint8_t d;
 
-	ret = dev_read8(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read8(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 
@@ -605,12 +612,13 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDSB, isn_exec_ldsb, 8);
 
-static int isn_exec_ldsh(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_ldsh(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret;
 	uint16_t d;
 
-	ret = dev_read16(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read16(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 
@@ -620,12 +628,13 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDSH, isn_exec_ldsh, 16);
 
-static int isn_exec_ldub(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_ldub(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret;
 	uint8_t d;
 
-	ret = dev_read8(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read8(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 
@@ -635,12 +644,13 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDUB, isn_exec_ldub, 8);
 
-static int isn_exec_lduh(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_lduh(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret;
 	uint16_t d;
 
-	ret = dev_read16(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read16(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 
@@ -650,12 +660,13 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDUH, isn_exec_lduh, 16);
 
-static int isn_exec_ld(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_ld(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret;
 	uint32_t d;
 
-	ret = dev_read32(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read32(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 
@@ -665,7 +676,8 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LD, isn_exec_ld, 32);
 
-static int isn_exec_ldd(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_ldd(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret = 0;
 	uint32_t d;
@@ -675,12 +687,12 @@ static int isn_exec_ldd(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
 		goto out;
 	}
 
-	ret = dev_read32(scpu_get_mem(cpu), ((addr_t)v1) + v2, &d);
+	ret = dev_read32(mem, ((addr_t)v1) + v2, &d);
 	if(ret)
 		goto out;
 	scpu_set_reg(cpu, rd, be32toh(d));
 
-	ret = dev_read32(scpu_get_mem(cpu), ((addr_t)v1) + v2 + 4, &d);
+	ret = dev_read32(mem, ((addr_t)v1) + v2 + 4, &d);
 	if(ret)
 		goto out;
 	scpu_set_reg(cpu, rd + 1, be32toh(d));
@@ -689,28 +701,31 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDD, isn_exec_ldd, 64);
 
-static int isn_exec_stb(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_stb(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
-	return dev_write8(scpu_get_mem(cpu), ((addr_t)v1) + v2,
-			scpu_get_reg(cpu, rd));
+	return dev_write8(mem, ((addr_t)v1) + v2, scpu_get_reg(cpu, rd));
 }
 DEFINE_ISN_HDL_MEM(STB, isn_exec_stb, 8);
 
-static int isn_exec_sth(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_sth(struct cpu *cpu, struct dev *mem,  sridx rd,
+		uint32_t v1, uint32_t v2)
 {
-	return dev_write16(scpu_get_mem(cpu), ((addr_t)v1) + v2,
+	return dev_write16(mem, ((addr_t)v1) + v2,
 			htobe16(scpu_get_reg(cpu, rd)));
 }
 DEFINE_ISN_HDL_MEM(STH, isn_exec_sth, 16);
 
-static int isn_exec_st(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_st(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
-	return dev_write32(scpu_get_mem(cpu), ((addr_t)v1) + v2,
+	return dev_write32(mem, ((addr_t)v1) + v2,
 			htobe32(scpu_get_reg(cpu, rd)));
 }
 DEFINE_ISN_HDL_MEM(ST, isn_exec_st, 32);
 
-static int isn_exec_std(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
+static int isn_exec_std(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
 {
 	int ret = 0;
 
@@ -718,12 +733,12 @@ static int isn_exec_std(struct cpu *cpu, sridx rd, uint32_t v1, uint32_t v2)
 		scpu_trap(cpu, ST_ILL_ISN);
 		goto out;
 	}
-	ret = dev_write32(scpu_get_mem(cpu), ((addr_t)v1) + v2,
+	ret = dev_write32(mem, ((addr_t)v1) + v2,
 			htobe32(scpu_get_reg(cpu, rd)));
 	if(ret != 0)
 		goto out;
 
-	ret = dev_write32(scpu_get_mem(cpu), ((addr_t)v1) + v2 + 4,
+	ret = dev_write32(mem, ((addr_t)v1) + v2 + 4,
 			htobe32(scpu_get_reg(cpu, rd + 1)));
 out:
 	return ret;
