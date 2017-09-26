@@ -46,6 +46,7 @@ test isa lduha
 test isa ld
 test isa lda
 test isa ldd
+test isa ldda
 test isa call
 test isa jmpl
 test isa ba

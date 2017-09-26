@@ -799,6 +799,7 @@ out:
 	return ret;
 }
 DEFINE_ISN_HDL_MEM(LDD, isn_exec_ldd, 64);
+DEFINE_ISN_HDL_MEMA(LDD, isn_exec_ldd, 64);
 
 static int isn_exec_stb(struct cpu *cpu, struct dev *mem, sridx rd,
 		uint32_t v1, uint32_t v2)
@@ -1285,6 +1286,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_MEM_ENTRY(LD),
 	ISN_HDL_MEMA_ENTRY(LD),
 	ISN_HDL_MEM_ENTRY(LDD),
+	ISN_HDL_MEMA_ENTRY(LDD),
 	ISN_HDL_MEM_ENTRY(STB),
 	ISN_HDL_MEM_ENTRY(STH),
 	ISN_HDL_MEM_ENTRY(ST),
