@@ -308,6 +308,7 @@ static int isn_decode_op3_3(struct sparc_isn *isn)
 	/* Type 3-3 instruction list, indexed by their opcode flag value */
 	static struct _op3_isn_type const _isn_op3_3[] = {
 		_OP3_ISN_INT(9, SI_LDSB),
+		_OP3_ISN_INT(25, SI_LDSBA),
 		_OP3_ISN_INT(10, SI_LDSH),
 		_OP3_ISN_INT(1, SI_LDUB),
 		_OP3_ISN_INT(2, SI_LDUH),
