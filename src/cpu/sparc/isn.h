@@ -61,6 +61,7 @@ enum sid_isn {
 	SI_LDUB,
 	SI_LDUBA,
 	SI_LDUH,
+	SI_LDUHA,
 	SI_LD,
 	SI_LDD,
 	SI_STB,

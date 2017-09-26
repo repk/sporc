@@ -42,6 +42,7 @@ test isa lduba
 test isa ldsh
 test isa ldsha
 test isa lduh
+test isa lduha
 test isa ld
 test isa ldd
 test isa call
