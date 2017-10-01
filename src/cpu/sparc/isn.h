@@ -74,6 +74,8 @@ enum sid_isn {
 	SI_STA,
 	SI_STD,
 	SI_STDA,
+	SI_LDSTUB,
+	SI_LDSTUBA,
 	SI_BN,
 	SI_BA,
 	SI_BNE,
