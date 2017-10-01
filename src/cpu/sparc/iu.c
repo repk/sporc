@@ -857,6 +857,32 @@ out:
 }
 DEFINE_ISN_HDL_MEM(LDSTUB, isn_exec_ldstub, 8);
 
+static int isn_exec_swap(struct cpu *cpu, struct dev *mem, sridx rd,
+		uint32_t v1, uint32_t v2)
+{
+	int ret = 0;
+	uint32_t d;
+
+	/*
+	 * XXX On mono cpu simulation, the following is valid.
+	 * TODO find a way to lock the address access for multicpu systems
+	 */
+
+	ret = dev_read32(mem, ((addr_t)v1) + v2, &d);
+	if(ret)
+		goto out;
+
+	ret = dev_write32(mem, ((addr_t)v1) + v2,
+			htobe32(scpu_get_reg(cpu, rd)));
+	if(ret)
+		goto out;
+
+	scpu_set_reg(cpu, rd, be32toh(d));
+out:
+	return ret;
+}
+DEFINE_ISN_HDL_MEM(SWAP, isn_exec_swap, 32);
+
 /* ---------------------- Icc test -------------------------- */
 
 /* Icc instruction handler for 2nd opcode format */
@@ -1298,6 +1324,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_MEM_ENTRY(ST),
 	ISN_HDL_MEM_ENTRY(STD),
 	ISN_HDL_MEM_ENTRY(LDSTUB),
+	ISN_HDL_MEM_ENTRY(SWAP),
 	ISN_HDL_ENTRY(BA),
 	ISN_HDL_BICC_ENTRY(BN),
 	ISN_HDL_BICC_ENTRY(BNE),

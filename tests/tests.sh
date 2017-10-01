@@ -53,6 +53,8 @@ test isa ldd
 test isa ldda
 test isa ldstub
 test isa ldstuba
+test isa swap
+test isa swapa
 test isa call
 test isa jmpl
 test isa ba
