@@ -32,6 +32,8 @@ test isa addx
 test isa addxcc
 test isa sub
 test isa subcc
+test isa subx
+test isa subxcc
 test isa g0
 test isa stb
 test isa stba
