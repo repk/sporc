@@ -377,6 +377,76 @@ static int isn_exec_carry_alu(struct isn_handler const *hdl, struct cpu *cpu,
 	ISN_HDL_CARRY_ALU_ENTRY(n),					\
 	ISN_HDL_CARRY_ALU_ENTRY(n ## CC)
 
+/* ---------------- Tag ALU instruction helpers ----------------- */
+
+/* Tag ALU instruction handler */
+struct isn_handler_tag_alu {
+	struct isn_handler_alu alu;
+	uint32_t (*op)(uint32_t v1, uint32_t v2);
+	uint8_t trap;
+};
+#define to_handler_tag_alu(h)						\
+	(container_of(to_handler_alu(h), struct isn_handler_tag_alu, alu))
+
+/* Define a tag ALU instruction handler */
+#define INIT_ISN_HDL_TAG_ALU(o, cc, t) {				\
+	.alu = INIT_ISN_HDL_ALU(isn_exec_tag_alu, icc, cc),		\
+	.op = o,							\
+	.trap = t,							\
+}
+
+/* Tag alu handler */
+static int isn_exec_tag_alu(struct isn_handler const *hdl, struct cpu *cpu,
+		sridx rd, uint32_t v1, uint32_t v2)
+{
+	struct isn_handler_tag_alu *ah = to_handler_tag_alu(hdl);
+	uint32_t res;
+	uint8_t n, z, c, v;
+
+	/* Save CC flags, so they can be restored */
+	if(ah->trap) {
+		n = scpu_get_cc_n(cpu);
+		z = scpu_get_cc_z(cpu);
+		c = scpu_get_cc_c(cpu);
+		v = scpu_get_cc_v(cpu);
+	}
+
+	res = ah->op(v1, v2);
+	ah->alu.icc(hdl, cpu, res, v1, v2);
+
+	if((v1 & 0x3) || (v2 & 0x3))
+		scpu_set_cc_v(cpu, 1);
+
+	if(ah->trap && scpu_get_cc_v(cpu)) {
+		scpu_trap(cpu, ST_TAG_OVERFLOW);
+		/* Restore CC flags */
+		scpu_set_cc_n(cpu, n);
+		scpu_set_cc_z(cpu, z);
+		scpu_set_cc_c(cpu, c);
+		scpu_set_cc_v(cpu, v);
+		goto out;
+	}
+
+	scpu_set_reg(cpu, rd, res);
+out:
+	return 0;
+}
+
+#define DEFINE_ISN_HDL_TAG_ALU_TRAP(n, t, o, cc)			\
+	static struct isn_handler_tag_alu const				\
+	isn_handler_ ## n = INIT_ISN_HDL_TAG_ALU(o, cc, t)
+
+#define ISN_HDL_TAG_ALU_TRAP_ENTRY(i)					\
+	[SI_ ## i] = &isn_handler_ ## i.alu.fmt3.hdl
+
+#define DEFINE_ISN_HDL_TAG_ALU(n, o, cc)				\
+	DEFINE_ISN_HDL_TAG_ALU_TRAP(n, 0, o, cc);			\
+	DEFINE_ISN_HDL_TAG_ALU_TRAP(n ## TV, 1, o, cc)
+
+#define ISN_HDL_TAG_ALU_ENTRY(i)					\
+	ISN_HDL_TAG_ALU_TRAP_ENTRY(i),					\
+	ISN_HDL_TAG_ALU_TRAP_ENTRY(i ## TV)
+
 /* ----------------- Logical instruction ------------------- */
 
 static uint32_t isn_exec_or(uint32_t v1, uint32_t v2)
