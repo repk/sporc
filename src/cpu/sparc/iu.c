@@ -326,6 +326,57 @@ static int isn_exec_simple_alu(struct isn_handler const *hdl, struct cpu *cpu,
 	ISN_HDL_SIMPLE_ALU_ENTRY(n),					\
 	ISN_HDL_SIMPLE_ALU_ENTRY(n ## CC)
 
+/* ---------------- Carry ALU instruction helpers ----------------- */
+
+/* Carry ALU instruction handler */
+struct isn_handler_carry_alu {
+	struct isn_handler_alu alu;
+	uint32_t (*op)(uint32_t v1, uint32_t v2);
+};
+#define to_handler_carry_alu(h)						\
+	(container_of(to_handler_alu(h), struct isn_handler_carry_alu, alu))
+
+/* Define a carry ALU instruction handler */
+#define INIT_ISN_HDL_CARRY_ALU(o, cc) {					\
+	.alu = INIT_ISN_HDL_ALU(isn_exec_carry_alu, icc, cc),		\
+	.op = o,							\
+}
+
+#define DEFINE_ISN_HDL_CARRY_ALU(n, o, cc)				\
+	static struct isn_handler_carry_alu const			\
+	isn_handler_ ## n = INIT_ISN_HDL_CARRY_ALU(o, cc)
+
+#define ISN_HDL_CARRY_ALU_ENTRY(i)					\
+	[SI_ ## i] = &isn_handler_ ## i.alu.fmt3.hdl
+
+/* Simple alu handler */
+static int isn_exec_carry_alu(struct isn_handler const *hdl, struct cpu *cpu,
+		sridx rd, uint32_t v1, uint32_t v2)
+{
+	struct isn_handler_carry_alu *ah = to_handler_carry_alu(hdl);
+	uint32_t res;
+
+	res = ah->op(ah->op(v1, v2), scpu_get_cc_c(cpu));
+	if(ah->alu.icc)
+		ah->alu.icc(hdl, cpu, res, v1, v2);
+
+	scpu_set_reg(cpu, rd, res);
+
+	return 0;
+}
+
+/* Define both ISN and ISNcc at once */
+#define DEFINE_ISN_HDL_CARRY_ALUcc(n, o, cc)				\
+	DEFINE_ISN_HDL_CARRY_ALU(n, o, NULL);				\
+	DEFINE_ISN_HDL_CARRY_ALU(n ## CC, o, cc)
+
+#define DEFINE_ISN_HDL_CARRY_ALUcc_NZ(n, o)				\
+	DEFINE_ISN_HDL_CARRY_ALUcc(n, o, isn_alu_icc_nz)
+
+#define ISN_HDL_CARRY_ALUcc_ENTRY(n)					\
+	ISN_HDL_CARRY_ALU_ENTRY(n),					\
+	ISN_HDL_CARRY_ALU_ENTRY(n ## CC)
+
 /* ----------------- Logical instruction ------------------- */
 
 static uint32_t isn_exec_or(uint32_t v1, uint32_t v2)
