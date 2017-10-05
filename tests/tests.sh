@@ -28,6 +28,8 @@ test isa srl
 test isa sra
 test isa add
 test isa addcc
+test isa addx
+test isa addxcc
 test isa sub
 test isa subcc
 test isa g0
