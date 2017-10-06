@@ -278,6 +278,8 @@ static int isn_decode_op3_2(struct sparc_isn *isn)
 		_OP3_ISN_INT(24, SI_ADDXCC),
 		_OP3_ISN_INT(32, SI_TADDCC),
 		_OP3_ISN_INT(34, SI_TADDCCTV),
+		_OP3_ISN_INT(33, SI_TSUBCC),
+		_OP3_ISN_INT(35, SI_TSUBCCTV),
 		_OP3_ISN_INT(4, SI_SUB),
 		_OP3_ISN_INT(20, SI_SUBCC),
 		_OP3_ISN_INT(12, SI_SUBX),

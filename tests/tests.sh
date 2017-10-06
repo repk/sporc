@@ -34,6 +34,8 @@ test isa taddcc
 test isa taddcctv
 test isa sub
 test isa subcc
+test isa tsubcc
+test isa tsubcctv
 test isa subx
 test isa subxcc
 test isa g0

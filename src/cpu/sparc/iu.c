@@ -576,6 +576,7 @@ static uint32_t isn_exec_sub(uint32_t v1, uint32_t v2)
 }
 DEFINE_ISN_HDL_SIMPLE_ALUcc(SUB, isn_exec_sub, isn_alu_icc_sub);
 DEFINE_ISN_HDL_CARRY_ALUcc(SUBX, isn_exec_sub, isn_alu_icc_sub);
+DEFINE_ISN_HDL_TAG_ALU(TSUBCC, isn_exec_sub, isn_alu_icc_sub);
 
 static int isn_exec_mulscc(struct isn_handler const *hdl, struct cpu *cpu,
 		sridx rd, uint32_t v1, uint32_t v2)
@@ -1436,6 +1437,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_TAG_ALU_ENTRY(TADDCC),
 	ISN_HDL_SIMPLE_ALUcc_ENTRY(SUB),
 	ISN_HDL_CARRY_ALUcc_ENTRY(SUBX),
+	ISN_HDL_TAG_ALU_ENTRY(TSUBCC),
 	ISN_HDL_ALU_ENTRY(MULSCC),
 	ISN_HDL_ALUcc64_ENTRY(UMUL),
 	ISN_HDL_ALUcc64_ENTRY(SMUL),
