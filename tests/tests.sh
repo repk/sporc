@@ -30,6 +30,8 @@ test isa add
 test isa addcc
 test isa addx
 test isa addxcc
+test isa taddcc
+test isa taddcctv
 test isa sub
 test isa subcc
 test isa subx

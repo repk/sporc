@@ -545,6 +545,7 @@ static uint32_t isn_exec_add(uint32_t v1, uint32_t v2)
 
 DEFINE_ISN_HDL_SIMPLE_ALUcc(ADD, isn_exec_add, isn_alu_icc_add);
 DEFINE_ISN_HDL_CARRY_ALUcc(ADDX, isn_exec_add, isn_alu_icc_add);
+DEFINE_ISN_HDL_TAG_ALU(TADDCC, isn_exec_add, isn_alu_icc_add);
 
 /* Set proper condition flags from previous subcc instruction */
 static int isn_alu_icc_sub(struct isn_handler const *hdl, struct cpu *cpu,
@@ -1432,6 +1433,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_ALU_ENTRY(SRA),
 	ISN_HDL_SIMPLE_ALUcc_ENTRY(ADD),
 	ISN_HDL_CARRY_ALUcc_ENTRY(ADDX),
+	ISN_HDL_TAG_ALU_ENTRY(TADDCC),
 	ISN_HDL_SIMPLE_ALUcc_ENTRY(SUB),
 	ISN_HDL_CARRY_ALUcc_ENTRY(SUBX),
 	ISN_HDL_ALU_ENTRY(MULSCC),

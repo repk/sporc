@@ -45,6 +45,8 @@ enum sid_isn {
 	SI_ADDCC,
 	SI_ADDX,
 	SI_ADDXCC,
+	SI_TADDCC,
+	SI_TADDCCTV,
 	SI_SUB,
 	SI_SUBCC,
 	SI_SUBX,
