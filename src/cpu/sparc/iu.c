@@ -1401,6 +1401,9 @@ static int isn_exec_sreg_asr_rd(struct isn_handler const *hdl, struct cpu *cpu,
 
 	i = to_ifmt(op3_reg, isn);
 
+	if(i->rs1 == 15 && i->rd == 0)
+		goto out; /* With no CPU caches STBAR is a nop */
+
 	if(scpu_get_asr(cpu, i->rs1, &val) != 0)
 		goto out;
 

@@ -115,6 +115,7 @@ test isa udiv
 test isa udivcc
 test isa sdiv
 test isa sdivcc
+test isa stbar
 
 printf "${RES}" | column -t
 

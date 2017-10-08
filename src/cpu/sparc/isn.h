@@ -128,6 +128,7 @@ enum sid_isn {
 	SI_WRWIM,
 	SI_RDTBR,
 	SI_WRTBR,
+	SI_STBAR,
 };
 
 struct sparc_isn {
