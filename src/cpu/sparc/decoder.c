@@ -57,6 +57,21 @@ static inline int isn_decode_op2_sethi(struct sparc_isn *isn)
 }
 
 /**
+ * Decode a unimp type instruction
+ */
+static inline int isn_decode_op2_unimp(struct sparc_isn *isn)
+{
+	struct sparc_ifmt_op2_imm *i = to_ifmt(op2_imm, isn);
+
+	i->isn.fmt = SIF_OP2_IMM;
+	i->isn.id = SI_UNIMP;
+	i->rd = ISN_OP2_RD(isn->op);
+	i->imm = ISN_OP2_IMM(isn->op);
+
+	return 0;
+}
+
+/**
  * Decode a type 2 branch instruction
  */
 static inline int isn_decode_op2_bicc(struct sparc_isn *isn)
@@ -102,6 +117,7 @@ static int isn_decode_op2(struct sparc_isn *isn)
 	 * Type 2 instructions are splitted into sethi and branch instructions
 	 */
 	static int (* const _decode_op2[])(struct sparc_isn *) = {
+		[0] = isn_decode_op2_unimp,
 		[2] = isn_decode_op2_bicc,
 		[4] = isn_decode_op2_sethi,
 	};

@@ -117,6 +117,7 @@ test isa sdiv
 test isa sdivcc
 test isa stbar
 test isa flush
+test isa unimp
 
 printf "${RES}" | column -t
 

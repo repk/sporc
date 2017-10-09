@@ -1517,5 +1517,6 @@ int isn_exec(struct cpu *cpu, struct sparc_isn const *i)
 	if((i->id < ARRAY_SIZE(_exec_isn)) && _exec_isn[i->id])
 		return _exec_isn[i->id]->handler(_exec_isn[i->id], cpu, i);
 
-	return -1;
+	scpu_trap(cpu, ST_ILL_ISN);
+	return 0;
 }
