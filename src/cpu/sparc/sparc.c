@@ -473,6 +473,21 @@ int scpu_set_asr(struct cpu *cpu, uint8_t asr, sreg v1, sreg v2)
 }
 
 /**
+ * Flush instruction cache memory.
+ *
+ * @param cpu: cpu to flush memory
+ * @param addr: Instruction memory address to flush
+ * @return: 0 on success, -1 otherwise
+ */
+int scpu_flush(struct cpu *cpu, addr_t addr)
+{
+	(void)cpu;
+	(void)addr;
+	/* With no CPU and a pipiline 1 instruction wide, flush is nop */
+	return 0;
+}
+
+/**
  * Get negative conditional code flag value
  *
  * @param cpu: cpu to get conditional code from

@@ -1418,6 +1418,18 @@ DEFINE_ISN_HDL_SREG(PSR, psr);
 DEFINE_ISN_HDL_SREG(WIM, wim);
 DEFINE_ISN_HDL_SREG(TBR, tbr);
 
+/* ----------------------- Flush instruction --------------------- */
+
+static int isn_exec_flush(struct isn_handler const *hdl, struct cpu *cpu,
+		sridx rd, uint32_t v1, uint32_t v2)
+{
+	(void)hdl;
+	(void)rd;
+	return scpu_flush(cpu, v1 + v2);
+}
+
+DEFINE_ISN_HDL_FMT3(FLUSH, isn_exec_flush);
+
 /* ------------ Instruction execution dispatch -------------- */
 
 /* Instruction handler dispatch array */
@@ -1496,6 +1508,7 @@ static struct isn_handler const *_exec_isn[] = {
 	ISN_HDL_SREG_ENTRY(PSR),
 	ISN_HDL_SREG_ENTRY(WIM),
 	ISN_HDL_SREG_ENTRY(TBR),
+	ISN_HDL_FMT3_ENTRY(FLUSH),
 };
 
 /* Dispatch instruction */
