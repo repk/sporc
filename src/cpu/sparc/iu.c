@@ -26,13 +26,13 @@ struct isn_handler {
 static int isn_exec_sethi(struct isn_handler const *hdl, struct cpu *cpu,
 		struct sparc_isn const *isn)
 {
-	struct sparc_ifmt_op2_sethi *i;
+	struct sparc_ifmt_op2_imm *i;
 	(void)hdl;
 
-	if(isn->fmt != SIF_OP2_SETHI)
+	if(isn->fmt != SIF_OP2_IMM)
 		return -1;
 
-	i = to_ifmt(op2_sethi, isn);
+	i = to_ifmt(op2_imm, isn);
 
 	scpu_set_reg(cpu, i->rd, i->imm << 10);
 	return 0;

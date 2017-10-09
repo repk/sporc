@@ -11,7 +11,7 @@ typedef uint32_t opcode;
 enum sisn_fmt {
 	SIF_UNKNOW = 0,
 	SIF_OP1,
-	SIF_OP2_SETHI,
+	SIF_OP2_IMM,
 	SIF_OP2_BICC,
 	SIF_OP3_REG,
 	SIF_OP3_IMM,
@@ -143,7 +143,7 @@ struct sparc_ifmt_op1 {
 	uint32_t disp30;
 };
 
-struct sparc_ifmt_op2_sethi {
+struct sparc_ifmt_op2_imm {
 	struct sparc_isn isn;
 	uint32_t imm;
 	uint8_t rd;
@@ -192,7 +192,7 @@ struct sparc_ifmt_op3_float {
 union sparc_isn_fill {
 	struct sparc_isn isn;
 	struct sparc_ifmt_op1 op1;
-	struct sparc_ifmt_op2_sethi op2_sethi;
+	struct sparc_ifmt_op2_imm op2_imm;
 	struct sparc_ifmt_op2_bicc op2_bicc;
 	struct sparc_ifmt_op3_reg op3_reg;
 	struct sparc_ifmt_op3_imm op3_imm;

@@ -41,11 +41,14 @@ static int isn_decode_op1(struct sparc_isn *isn)
 #define ISN_OP2_IMM(o) ((o) & 0x3fffff)
 #define ISN_OP2_DISP(o) (sign_ext((o) & 0x3fffff, 22))
 
+/**
+ * Decode a sethi type instruction
+ */
 static inline int isn_decode_op2_sethi(struct sparc_isn *isn)
 {
-	struct sparc_ifmt_op2_sethi *i = to_ifmt(op2_sethi, isn);
+	struct sparc_ifmt_op2_imm *i = to_ifmt(op2_imm, isn);
 
-	i->isn.fmt = SIF_OP2_SETHI;
+	i->isn.fmt = SIF_OP2_IMM;
 	i->isn.id = SI_SETHI;
 	i->rd = ISN_OP2_RD(isn->op);
 	i->imm = ISN_OP2_IMM(isn->op);
