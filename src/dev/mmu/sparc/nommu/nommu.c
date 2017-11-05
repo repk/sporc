@@ -4,7 +4,7 @@
 
 #include "types.h"
 #include "dev/device.h"
-#include "dev/cfg/sparc-nommu.h"
+#include "dev/cfg/mmu/sparc/nommu.h"
 #include "cpu/cpu.h"
 #include "cpu/sparc/sparc.h"
 

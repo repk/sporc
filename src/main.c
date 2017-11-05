@@ -7,7 +7,7 @@
 #include "dev/device.h"
 #include "dev/cfg/ramctl.h"
 #include "dev/cfg/filemem.h"
-#include "dev/cfg/sparc-nommu.h"
+#include "dev/cfg/mmu/sparc/nommu.h"
 
 #define PROGFILE "./example/example.bin"
 #define KB 1024
