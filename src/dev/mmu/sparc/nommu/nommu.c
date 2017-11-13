@@ -39,9 +39,9 @@ static int snommu_read8(struct dev *dev, addr_t addr, uint8_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->read8)
+	if(!mem->drv->phyops->read8)
 		return -ENOSYS;
-	return mem->drv->ops->read8(mem, addr, val);
+	return mem->drv->phyops->read8(mem, addr, val);
 }
 
 /**
@@ -51,9 +51,9 @@ static int snommu_read16(struct dev *dev, addr_t addr, uint16_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->read16)
+	if(!mem->drv->phyops->read16)
 		return -ENOSYS;
-	return mem->drv->ops->read16(mem, addr, val);
+	return mem->drv->phyops->read16(mem, addr, val);
 }
 
 /**
@@ -63,9 +63,9 @@ static int snommu_read32(struct dev *dev, addr_t addr, uint32_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->read32)
+	if(!mem->drv->phyops->read32)
 		return -ENOSYS;
-	return mem->drv->ops->read32(mem, addr, val);
+	return mem->drv->phyops->read32(mem, addr, val);
 }
 
 /**
@@ -75,9 +75,9 @@ static int snommu_write8(struct dev *dev, addr_t addr, uint8_t val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->write8)
+	if(!mem->drv->phyops->write8)
 		return -ENOSYS;
-	return mem->drv->ops->write8(mem, addr, val);
+	return mem->drv->phyops->write8(mem, addr, val);
 }
 
 /**
@@ -87,9 +87,9 @@ static int snommu_write16(struct dev *dev, addr_t addr, uint16_t val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->write16)
+	if(!mem->drv->phyops->write16)
 		return -ENOSYS;
-	return mem->drv->ops->write16(mem, addr, val);
+	return mem->drv->phyops->write16(mem, addr, val);
 }
 
 /**
@@ -99,9 +99,9 @@ static int snommu_write32(struct dev *dev, addr_t addr, uint32_t val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->write32)
+	if(!mem->drv->phyops->write32)
 		return -ENOSYS;
-	return mem->drv->ops->write32(mem, addr, val);
+	return mem->drv->phyops->write32(mem, addr, val);
 }
 
 /**
@@ -111,9 +111,9 @@ static int snommu_fetch_isn8(struct dev *dev, addr_t addr, uint8_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->fetch_isn8)
+	if(!mem->drv->phyops->fetch_isn8)
 		return -ENOSYS;
-	return mem->drv->ops->fetch_isn8(mem, addr, val);
+	return mem->drv->phyops->fetch_isn8(mem, addr, val);
 }
 
 /**
@@ -123,9 +123,9 @@ static int snommu_fetch_isn16(struct dev *dev, addr_t addr, uint16_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->fetch_isn16)
+	if(!mem->drv->phyops->fetch_isn16)
 		return -ENOSYS;
-	return mem->drv->ops->fetch_isn16(mem, addr, val);
+	return mem->drv->phyops->fetch_isn16(mem, addr, val);
 }
 
 /**
@@ -135,9 +135,9 @@ static int snommu_fetch_isn32(struct dev *dev, addr_t addr, uint32_t *val)
 {
 	struct dev *mem = to_snommu_dev(dev)->mem;
 
-	if(!mem->drv->ops->fetch_isn32)
+	if(!mem->drv->phyops->fetch_isn32)
 		return -ENOSYS;
-	return mem->drv->ops->fetch_isn32(mem, addr, val);
+	return mem->drv->phyops->fetch_isn32(mem, addr, val);
 }
 
 /**

@@ -15,8 +15,8 @@
 struct ramdev_map {
 	/* Memory device */
 	struct ramdev *dev;
-	/* Virtual map address */
-	addr_t addr;
+	/* Physical map address */
+	phyaddr_t addr;
 	/* Permission for this map chunk */
 	perm_t perm;
 };
@@ -30,7 +30,7 @@ struct ramctl {
 #define to_ramctl(d) (container_of(d, struct ramctl, dev))
 
 static inline struct ramdev_map *ramctl_get_map(struct dev *dev,
-		addr_t addr, size_t sz)
+		phyaddr_t addr, size_t sz)
 {
 	struct ramdev_map *map = to_ramctl(dev)->map;
 	struct ramdev_map *ret = NULL;
@@ -48,7 +48,7 @@ static inline struct ramdev_map *ramctl_get_map(struct dev *dev,
 	return ret;
 }
 
-static int ramctl_read8(struct dev *dev, addr_t addr, uint8_t *val)
+static int ramctl_read8(struct dev *dev, phyaddr_t addr, uint8_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 1);
 	struct dev *mapdev;
@@ -58,16 +58,16 @@ static int ramctl_read8(struct dev *dev, addr_t addr, uint8_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->read8)
+	if(!mapdev->drv->phyops->read8)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_R))
 		return -EACCES;
 
-	return mapdev->drv->ops->read8(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->read8(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_read16(struct dev *dev, addr_t addr, uint16_t *val)
+static int ramctl_read16(struct dev *dev, phyaddr_t addr, uint16_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 2);
 	struct dev *mapdev;
@@ -77,16 +77,16 @@ static int ramctl_read16(struct dev *dev, addr_t addr, uint16_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->read16)
+	if(!mapdev->drv->phyops->read16)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_R))
 		return -EACCES;
 
-	return mapdev->drv->ops->read16(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->read16(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_read32(struct dev *dev, addr_t addr, uint32_t *val)
+static int ramctl_read32(struct dev *dev, phyaddr_t addr, uint32_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 4);
 	struct dev *mapdev;
@@ -96,16 +96,16 @@ static int ramctl_read32(struct dev *dev, addr_t addr, uint32_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->read32)
+	if(!mapdev->drv->phyops->read32)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_R))
 		return -EACCES;
 
-	return mapdev->drv->ops->read32(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->read32(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_write8(struct dev *dev, addr_t addr, uint8_t val)
+static int ramctl_write8(struct dev *dev, phyaddr_t addr, uint8_t val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 1);
 	struct dev *mapdev;
@@ -115,16 +115,16 @@ static int ramctl_write8(struct dev *dev, addr_t addr, uint8_t val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->write8)
+	if(!mapdev->drv->phyops->write8)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_W))
 		return -EACCES;
 
-	return mapdev->drv->ops->write8(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->write8(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_write16(struct dev *dev, addr_t addr, uint16_t val)
+static int ramctl_write16(struct dev *dev, phyaddr_t addr, uint16_t val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 2);
 	struct dev *mapdev;
@@ -134,16 +134,16 @@ static int ramctl_write16(struct dev *dev, addr_t addr, uint16_t val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->write16)
+	if(!mapdev->drv->phyops->write16)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_W))
 		return -EACCES;
 
-	return mapdev->drv->ops->write16(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->write16(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_write32(struct dev *dev, addr_t addr, uint32_t val)
+static int ramctl_write32(struct dev *dev, phyaddr_t addr, uint32_t val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 4);
 	struct dev *mapdev;
@@ -153,16 +153,16 @@ static int ramctl_write32(struct dev *dev, addr_t addr, uint32_t val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->write32)
+	if(!mapdev->drv->phyops->write32)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_W))
 		return -EACCES;
 
-	return mapdev->drv->ops->write32(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->write32(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_fetch_isn8(struct dev *dev, addr_t addr, uint8_t *val)
+static int ramctl_fetch_isn8(struct dev *dev, phyaddr_t addr, uint8_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 1);
 	struct dev *mapdev;
@@ -172,16 +172,16 @@ static int ramctl_fetch_isn8(struct dev *dev, addr_t addr, uint8_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->fetch_isn8)
+	if(!mapdev->drv->phyops->fetch_isn8)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_X))
 		return -EACCES;
 
-	return mapdev->drv->ops->fetch_isn8(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->fetch_isn8(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_fetch_isn16(struct dev *dev, addr_t addr, uint16_t *val)
+static int ramctl_fetch_isn16(struct dev *dev, phyaddr_t addr, uint16_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 2);
 	struct dev *mapdev;
@@ -191,16 +191,16 @@ static int ramctl_fetch_isn16(struct dev *dev, addr_t addr, uint16_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->fetch_isn16)
+	if(!mapdev->drv->phyops->fetch_isn16)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_X))
 		return -EACCES;
 
-	return mapdev->drv->ops->fetch_isn16(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->fetch_isn16(mapdev, addr - rd->addr, val);
 }
 
-static int ramctl_fetch_isn32(struct dev *dev, addr_t addr, uint32_t *val)
+static int ramctl_fetch_isn32(struct dev *dev, phyaddr_t addr, uint32_t *val)
 {
 	struct ramdev_map *rd = ramctl_get_map(dev, addr, 4);
 	struct dev *mapdev;
@@ -210,13 +210,13 @@ static int ramctl_fetch_isn32(struct dev *dev, addr_t addr, uint32_t *val)
 
 	mapdev = &rd->dev->dev;
 
-	if(!mapdev->drv->ops->fetch_isn32)
+	if(!mapdev->drv->phyops->fetch_isn32)
 		return -ENOSYS;
 
 	if(!(rd->perm & MP_X))
 		return -EACCES;
 
-	return mapdev->drv->ops->fetch_isn32(mapdev, addr - rd->addr, val);
+	return mapdev->drv->phyops->fetch_isn32(mapdev, addr - rd->addr, val);
 }
 
 static int ram_map(struct ramctl *ctl, struct rammap const *map)
@@ -310,7 +310,7 @@ static void ramctl_destroy(struct dev *dev)
 	free(ctl);
 }
 
-static struct devops const ramctlops = {
+static struct phydevops const ramctlops = {
 	.create = ramctl_create,
 	.destroy = ramctl_destroy,
 	.read8 = ramctl_read8,
@@ -326,7 +326,7 @@ static struct devops const ramctlops = {
 
 static struct drv const ram = {
 	.name = "ramctl",
-	.ops = &ramctlops,
+	.phyops = &ramctlops,
 };
 
 DRIVER_REGISTER(ram);

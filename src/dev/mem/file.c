@@ -57,7 +57,7 @@ static inline int fmem_perm_flag(perm_t perm)
 /**
  * Fetch a 8 bit value from memory
  */
-static int fmem_read8(struct dev *dev, addr_t addr, uint8_t *val)
+static int fmem_read8(struct dev *dev, phyaddr_t addr, uint8_t *val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -69,7 +69,7 @@ static int fmem_read8(struct dev *dev, addr_t addr, uint8_t *val)
 /**
  * Fetch a 16 bit value from memory
  */
-static int fmem_read16(struct dev *dev, addr_t addr, uint16_t *val)
+static int fmem_read16(struct dev *dev, phyaddr_t addr, uint16_t *val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -81,7 +81,7 @@ static int fmem_read16(struct dev *dev, addr_t addr, uint16_t *val)
 /**
  * Fetch a 32 bit value from memory
  */
-static int fmem_read32(struct dev *dev, addr_t addr, uint32_t *val)
+static int fmem_read32(struct dev *dev, phyaddr_t addr, uint32_t *val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -93,7 +93,7 @@ static int fmem_read32(struct dev *dev, addr_t addr, uint32_t *val)
 /**
  * Write a 8 bit value into memory
  */
-static int fmem_write8(struct dev *dev, addr_t addr, uint8_t val)
+static int fmem_write8(struct dev *dev, phyaddr_t addr, uint8_t val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -105,7 +105,7 @@ static int fmem_write8(struct dev *dev, addr_t addr, uint8_t val)
 /**
  * Write a 16 bit value into memory
  */
-static int fmem_write16(struct dev *dev, addr_t addr, uint16_t val)
+static int fmem_write16(struct dev *dev, phyaddr_t addr, uint16_t val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -117,7 +117,7 @@ static int fmem_write16(struct dev *dev, addr_t addr, uint16_t val)
 /**
  * Write a 32 bit value into memory
  */
-static int fmem_write32(struct dev *dev, addr_t addr, uint32_t val)
+static int fmem_write32(struct dev *dev, phyaddr_t addr, uint32_t val)
 {
 	struct filemem *fdev = to_filemem(dev);
 
@@ -255,7 +255,7 @@ static void fmem_destroy(struct dev *dev)
 /*
  * File memory mapping driver operations
  */
-static struct devops const fmops = {
+static struct phydevops const fmops = {
 	.create = fmem_create,
 	.destroy = fmem_destroy,
 	.read8 = fmem_read8,
@@ -274,7 +274,7 @@ static struct devops const fmops = {
  */
 static struct drv const fmem = {
 	.name = "file-mem",
-	.ops = &fmops,
+	.phyops = &fmops,
 };
 
 DRIVER_REGISTER(fmem);
