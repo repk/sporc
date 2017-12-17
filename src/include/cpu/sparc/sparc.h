@@ -1,6 +1,8 @@
 #ifndef _CPU_SPARC_SPARC_H_
 #define _CPU_SPARC_SPARC_H_
 
+#define SPARC_AS_SRMMU_CACHE 0x3
+#define SPARC_AS_SRMMU_REG 0x4
 #define SPARC_AS_UDATA 0xa
 #define SPARC_AS_SDATA 0xb
 #define SPARC_AS_UISN 0x8
