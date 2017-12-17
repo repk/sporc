@@ -103,7 +103,81 @@ static struct cpucfg const cpucfg = {
 	.name = "cpu0",
 };
 
-/* Platform devices configuration */
+static struct cpu *_test_open(int argc, char **argv, struct devcfg *cfg,
+		size_t sz, char const *memfile, size_t memsz)
+{
+	struct filemem_cfg fc = {
+		.off = 0,
+		.sz = memsz,
+	};
+	struct cpu *cpu = NULL;
+	struct dev *d;
+	char file[FILENAME_MAX], *end;
+	size_t i;
+	int ret;
+
+	if(argc == 0) {
+		fprintf(stderr, "Malformed prog args\n");
+		goto err;
+	}
+
+	/* Get relative memfile path */
+	end = strrchr(argv[0], '/');
+	if(end) {
+		snprintf(file, FILENAME_MAX - 1, "%.*s/%s",
+				(int)(end - argv[0]), argv[0], memfile);
+	} else {
+		strncpy(file, memfile, FILENAME_MAX - 1);
+	}
+	file[FILENAME_MAX - 1] = '\0';
+	fc.path = file;
+	cfg[0].cfg = &fc;
+
+	/* Create Cpu */
+	cpu = cpu_create(&cpucfg);
+	if(cpu == NULL) {
+		fprintf(stderr, "Cannot create cpu\n");
+		goto err;
+	}
+
+	/* Create devices */
+	for(i = 0; i < sz; ++i) {
+		if(dev_create(&cfg[i]) == NULL) {
+			fprintf(stderr, "Cannot create dev %s\n", cfg[i].name);
+			goto devexit;
+		}
+	}
+
+	ret = cpu_boot(cpu, 0x0);
+	if(ret < 0) {
+		fprintf(stderr, "Cannot boot cpu\n");
+		goto devexit;
+	}
+
+	return cpu;
+
+devexit:
+	for(i = sz; i > 0; --i)
+		if((d = dev_get(cfg[i - 1].name)) != NULL)
+			dev_destroy(d);
+	cpu_destroy(cpu);
+err:
+	return NULL;
+}
+
+static void _test_close(struct cpu *cpu, struct devcfg *cfg, size_t sz)
+{
+	struct dev *d;
+	size_t i;
+
+	for(i = sz; i > 0; --i)
+		if((d = dev_get(cfg[i - 1].name)) != NULL)
+			dev_destroy(d);
+
+	cpu_destroy(cpu);
+}
+
+/* NOMMU platform devices configuration */
 static struct devcfg devcfg[] = {
 	{
 		.drvname = "file-mem",
@@ -138,75 +212,54 @@ static struct devcfg devcfg[] = {
 struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 		size_t memsz)
 {
-	struct filemem_cfg fc = {
-		.off = 0,
-		.sz = memsz,
-	};
-	struct cpu *cpu = NULL;
-	struct dev *d;
-	char file[FILENAME_MAX], *end;
-	size_t i;
-	int ret;
-
-	if(argc == 0) {
-		fprintf(stderr, "Malformed prog args\n");
-		goto err;
-	}
-
-	/* Get relative memfile path */
-	end = strrchr(argv[0], '/');
-	if(end) {
-		snprintf(file, FILENAME_MAX - 1, "%.*s/%s",
-				(int)(end - argv[0]), argv[0], memfile);
-	} else {
-		strncpy(file, memfile, FILENAME_MAX - 1);
-	}
-	file[FILENAME_MAX - 1] = '\0';
-	fc.path = file;
-	devcfg[0].cfg = &fc;
-
-	/* Create Cpu */
-	cpu = cpu_create(&cpucfg);
-	if(cpu == NULL) {
-		fprintf(stderr, "Cannot create cpu\n");
-		goto err;
-	}
-
-	/* Create devices */
-	for(i = 0; i < ARRAY_SIZE(devcfg); ++i) {
-		if(dev_create(&devcfg[i]) == NULL) {
-			fprintf(stderr, "Cannot create dev %s\n",
-					devcfg[i].name);
-			goto cpuexit;
-		}
-	}
-
-	ret = cpu_boot(cpu, 0x0);
-	if(ret < 0) {
-		fprintf(stderr, "Cannot boot cpu\n");
-		goto devexit;
-	}
-
-	return cpu;
-
-devexit:
-	for(i = ARRAY_SIZE(devcfg); i > 0; --i)
-		if((d = dev_get(devcfg[i - 1].name)) != NULL)
-			dev_destroy(d);
-cpuexit:
-	cpu_destroy(cpu);
-err:
-	return NULL;
+	return _test_open(argc, argv, devcfg, ARRAY_SIZE(devcfg), memfile, memsz);
 }
 
 void test_cpu_close(struct cpu *cpu)
 {
-	struct dev *d;
-	size_t i;
+	_test_close(cpu, devcfg, ARRAY_SIZE(devcfg));
+}
 
-	for(i = ARRAY_SIZE(devcfg); i > 0; --i)
-		if((d = dev_get(devcfg[i - 1].name)) != NULL)
-			dev_destroy(d);
+/* SRMMU platform devices configuration */
+static struct devcfg mmudevcfg[] = {
+	{
+		.drvname = "file-mem",
+		.name = "progmap",
+	},
+	{
+		.drvname = "ramctl",
+		.name = "ram0",
+		.cfg = DEVCFG(ramctl_cfg) {
+			.devlst = (struct rammap[]){
+				{
+					.devname = "progmap",
+					.addr = 0x0,
+					.perm = MP_R | MP_W | MP_X,
+					.sz = -1,
+				},
+				{}, /* Sentinel */
+			},
+		},
+	},
+	{
+		.drvname = "sparc-srmmu",
+		.name = "mmu0",
+		.cfg = DEVCFG(sparc_nommu_cfg) {
+			.dmem = "ram0",
+			.imem = "ram0",
+			.cpu = "cpu0",
+		}
+	},
+};
 
-	cpu_destroy(cpu);
+struct cpu *test_mmucpu_open(int argc, char **argv, char const *memfile,
+		size_t memsz)
+{
+	return _test_open(argc, argv, mmudevcfg, ARRAY_SIZE(mmudevcfg),
+			memfile, memsz);
+}
+
+void test_mmucpu_close(struct cpu *cpu)
+{
+	_test_close(cpu, mmudevcfg, ARRAY_SIZE(mmudevcfg));
 }

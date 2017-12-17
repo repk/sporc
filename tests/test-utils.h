@@ -19,5 +19,8 @@ int test_cpu_step(struct cpu *cpu);
 struct cpu *test_cpu_open(int argc, char **argv, char const *memfile,
 		size_t memsz);
 void test_cpu_close(struct cpu *cpu);
+struct cpu *test_mmucpu_open(int argc, char **argv, char const *memfile,
+		size_t memsz);
+void test_mmucpu_close(struct cpu *cpu);
 
 #endif
