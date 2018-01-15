@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 	if(ret != 0)
 		goto close;
 
-	/* AND */
+	/* ANDN */
 	ret = test_cpu_step(c);
 	if(ret != 0)
 		goto close;
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	if(ret != 0)
 		goto close;
 
-	/* AND */
+	/* ANDN */
 	ret = test_cpu_step(c);
 	if(ret != 0)
 		goto close;

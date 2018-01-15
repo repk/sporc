@@ -288,7 +288,7 @@ DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(OR, isn_exec_or);
 
 static uint32_t isn_exec_orn(uint32_t v1, uint32_t v2)
 {
-	return ~(v1 | v2);
+	return v1 | (~v2);
 }
 DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(ORN, isn_exec_orn);
 
@@ -300,7 +300,7 @@ DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(AND, isn_exec_and);
 
 static uint32_t isn_exec_andn(uint32_t v1, uint32_t v2)
 {
-	return ~(v1 & v2);
+	return v1 & (~v2);
 }
 DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(ANDN, isn_exec_andn);
 
@@ -312,7 +312,7 @@ DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(XOR, isn_exec_xor);
 
 static uint32_t isn_exec_xnor(uint32_t v1, uint32_t v2)
 {
-	return ~(v1 ^ v2);
+	return v1 ^ (~v2);
 }
 DEFINE_ISN_HDL_SIMPLE_ALUcc_NZ(XNOR, isn_exec_xnor);
 
