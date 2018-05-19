@@ -731,7 +731,7 @@ static int srmmu_vdev_create(struct dev **dev, struct devcfg const *cfg)
 	struct srmmu_dev *mdev = &scfg->mmu->vdev[scfg->type];
 	int ret = -EINVAL;
 
-	if(scfg->type > SDT_NR)
+	if(scfg->type >= SDT_NR)
 		goto out;
 
 	ret = -ENODEV;
