@@ -26,6 +26,7 @@ script:
   - export PATH=/opt/sparc-elf-4.9.1-Linux-x86_64/bin/:${PATH}
   - export CROSS=sparc-elf-
   - export TESTS=1
+  - export CROSSCFLAGS="-mcpu=v8"
   - make clean
   - make -j4
   - ./out/tests/tests.sh
