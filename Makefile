@@ -166,7 +166,7 @@ endef
 define cross-aobj-rule
 $(2): $(2:$(BUILDDIR)%.o=%.s)
 	@mkdir -p $$(dir $$@)
-	$$(CROSSCC) -c $$(CFLAGS) $$(_$(1)_CFLAGS) -o $$@ $$<
+	$$(CROSSCC) -c $$(CROSSCFLAGS) $$(_$(1)_CFLAGS) -o $$@ $$<
 
 $(2)-clean:
 	$(call rm-file,$$(@:%-clean=%))
